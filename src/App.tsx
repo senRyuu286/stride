@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import Onboarding from './pages/Onboarding';
+import Dashboard from './pages/Dashboard';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -6,11 +8,9 @@ const App = () => {
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-
     if (!hasSeenOnboarding) {
       setShowOnboarding(true);
     }
-
     setIsLoading(false);
   }, []);
 
@@ -20,41 +20,22 @@ const App = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>; 
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-base-200">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
   }
 
-  
   return (
-    <div>
+    <main>
       {showOnboarding ? (
-        <OnboardingScreen onFinish={handleFinishOnboarding} />
+        <Onboarding onFinish={handleFinishOnboarding} />
       ) : (
-        <MainDashboard />
+        <Dashboard />
       )}
-    </div>
+    </main>
   );
 };
-
-interface OnboardingProps {
-  onFinish: () => void; 
-}
-
-const OnboardingScreen = ({ onFinish }: OnboardingProps) => (
-  <div style={{ textAlign: 'center', padding: '50px' }}>
-    <h1>Welcome to the App! 🎉</h1>
-    <p>This is the onboarding screen. You will only see this once.</p>
-    
-    <button onClick={onFinish} style={{ padding: '10px 20px', fontSize: '16px' }}>
-      Get Started
-    </button>
-  </div>
-);
-
-const MainDashboard = () => (
-  <div style={{ textAlign: 'center', padding: '50px' }}>
-    <h1>Main Dashboard 🏠</h1>
-    <p>Welcome back! You bypass the onboarding because you are a returning user.</p>
-  </div>
-);
 
 export default App;
