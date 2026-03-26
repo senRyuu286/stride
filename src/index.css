@@ -38,7 +38,7 @@
 }
 
 @plugin "daisyui/theme" {
-  name: "Stride-light";
+  name: "stride-light";
   default: false;
   prefersdark: false;
   color-scheme: "light";

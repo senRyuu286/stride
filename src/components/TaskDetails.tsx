@@ -1,77 +1,218 @@
-import React from 'react';
-import type { Task } from '../context/TaskContext'; // Import the Task type from your Focus file
- // Import the Task type from your Focus file
+import { useState, useEffect } from 'react';
+import { Trash2, Calendar, FolderOutput } from 'lucide-react';
+import { useTasks, type Task } from '../context/TaskContext';
 
 interface TaskDetailsProps {
   task: Task;
   onClose: () => void;
+  onEditTask: (task: Task) => void;
 }
 
-export function TaskDetails({ task, onClose }: TaskDetailsProps) {
+function getDaysLeft(dueDateStr: string | null): number | null {
+  if (!dueDateStr) return null;
+  const due = new Date(dueDateStr);
+  const now = new Date();
+
+  due.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  
+  const diffTime = due.getTime() - now.getTime();
+  return Math.round(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function formatFullDate(dueDateStr: string | null): string {
+  if (!dueDateStr) return "";
+  return new Date(dueDateStr).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short', 
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+
+export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
+  const { upcomingTasks, dailyTasks, updateTask, toggleTaskCompletion, deleteTask } = useTasks();
+
+  const activeTask = upcomingTasks.find(t => t.id === task.id) 
+                  || dailyTasks.find(t => t?.id === task.id) 
+                  || task;
+
+  const [notes, setNotes] = useState(activeTask.description || '');
+  const daysLeft = getDaysLeft(activeTask.dueDate);
+  const formattedDate = formatFullDate(activeTask.dueDate);
+
+  useEffect(() => {
+    setNotes(activeTask.description || '');
+  }, [activeTask.id, activeTask.description]);
+
+  const handleSaveNotes = () => {
+    if (notes !== activeTask.description) {
+      updateTask(activeTask.id, { description: notes });
+    }
+  };
+
+  const handleComplete = () => {
+    if (activeTask.status !== 'completed' && activeTask.subtasks.length > 0) {
+      const completedSubtasks = activeTask.subtasks.map(subtask => ({
+        ...subtask,
+        isCompleted: true
+      }));
+      updateTask(activeTask.id, { subtasks: completedSubtasks });
+    }
+
+    toggleTaskCompletion(activeTask.id);
+    onClose(); 
+  };
+
+  const handleSubtaskToggle = (subtaskId: string) => {
+    const updatedSubtasks = activeTask.subtasks.map(subtask => 
+      subtask.id === subtaskId 
+        ? { ...subtask, isCompleted: !subtask.isCompleted } 
+        : subtask
+    );
+    updateTask(activeTask.id, { subtasks: updatedSubtasks });
+  };
+
+  const handleDelete = () => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${activeTask.title}"?`);
+    if (confirmed) {
+      deleteTask(activeTask.id);
+      onClose(); 
+    }
+  };
+
   return (
-    <aside className="w-full md:w-80 lg:w-96 bg-base-100/95 backdrop-blur-2xl border-l border-base-content/10 shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200 absolute right-0 h-full md:relative md:animate-none shrink-0">
-      
-      {/* HEADER ALIGNMENT FIX: 
-        We use 'h-16' to force the height to match standard Tailwind topbars. 
-        If your Topbar is taller, change this to 'h-20' or 'h-24'. 
-      */}
-      <div className="h-14 flex justify-between items-center px-6 border-b border-base-content/5">
-        <div className="flex items-center gap-2">
-          {/* Dynamic dot color based on priority */}
-          <span className={`w-2 h-2 rounded-full inline-block ${task.priority === 'High' ? 'bg-error' : task.priority === 'Medium' ? 'bg-warning' : 'bg-info'}`}></span>
-          <span className="text-xs font-semibold text-base-content/70 uppercase tracking-wider">
-            {task.category}
+    <aside className="w-full md:w-80 lg:w-100 bg-base-100/95 backdrop-blur-2xl border-l border-base-content/10 flex flex-col z-50 absolute right-0 inset-y-0 md:relative md:h-full shrink-0 shadow-2xl max-w-full overflow-hidden">
+
+      <div className="h-14 flex justify-between items-center px-6 border-b border-base-content/10 shrink-0 w-full">
+        <div className="flex items-center gap-2 min-w-0">
+          <span 
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              activeTask.priority === 'High' ? 'bg-error' : 
+              activeTask.priority === 'Medium' ? 'bg-warning' : 
+              activeTask.priority === 'Low' ? 'bg-info' :
+              'bg-base-content/20'
+            }`}
+          />
+          <span className="text-xs font-bold text-base-content/60 uppercase tracking-widest truncate">
+            {activeTask.category}
           </span>
         </div>
-        <button 
-          className="btn btn-sm btn-circle btn-ghost"
-          onClick={onClose}
-        >
-          ✕
-        </button>
+
+        <div className="flex items-center gap-1 shrink-0">
+
+          <button 
+            className="btn btn-sm btn-square btn-ghost text-base-content/40 hover:text-primary transition-colors"
+            onClick={() => {
+              onEditTask(activeTask);
+            }}
+            aria-label="Process task"
+            title="Process Task (Open Editor)"
+          >
+            <FolderOutput size={16} />
+          </button>
+
+          <button 
+            className="btn btn-sm btn-square btn-ghost text-base-content/40 hover:text-error transition-colors"
+            onClick={handleDelete}
+            aria-label="Delete task"
+            title="Delete Task"
+          >
+            <Trash2 size={16} />
+          </button>
+
+          <button 
+            className="btn btn-sm btn-square btn-ghost text-base-content/70 shrink-0"
+            onClick={onClose}
+            aria-label="Close details"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
       </div>
-      
-      {/* Body */}
-      <div className="p-6 flex-1 overflow-y-auto space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">{task.title}</h2>
-          <p className="text-sm text-base-content/60 flex items-center gap-2">
-            📅 Due In: <span className="text-error font-semibold">{task.daysLeft} Days</span>
-          </p>
+
+      <div className="p-6 flex-1 overflow-y-auto overflow-x-hidden space-y-8 w-full">
+
+        <div className="w-full min-w-0 flex flex-col">
+          <h2 className={`text-3xl font-bold mb-4 wrap-break-word whitespace-pre-wrap ${activeTask.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
+            {activeTask.title}
+          </h2>
+          
+          <div className="flex flex-col gap-3 bg-base-200/50 p-4 rounded-xl border border-base-content/5">
+            <div className="flex items-start gap-3">
+              <Calendar size={18} className="text-base-content/50 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-base-content/80">
+                  {formattedDate || "No Due Date"}
+                </p>
+                {daysLeft !== null && activeTask.status !== 'completed' && (
+                  <p className={`text-xs mt-1 ${
+                    daysLeft < 0 ? 'text-error font-bold' : 
+                    daysLeft === 0 ? 'text-warning font-bold' : 
+                    'text-base-content/50'
+                  }`}>
+                    {daysLeft === 0 ? 'Due Today' : daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days remaining`}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {activeTask.tags && activeTask.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {activeTask.tags.map((tag) => (
+                  <span key={tag} className="badge badge-sm badge-outline border-base-content/20 text-base-content/70 py-2 px-2.5">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="form-control w-full">
-          <label className="label px-0">
-            <span className="label-text font-bold text-base-content/70">Notes & Details</span>
-          </label>
+        <div className="space-y-3 w-full min-w-0">
+          <h3 className="text-sm font-bold text-base-content/50 uppercase tracking-wider">Notes & Details</h3>
           <textarea 
-            className="textarea textarea-bordered bg-base-200/50 h-40 w-full text-base-content/80 leading-relaxed focus:outline-primary border-base-content/10" 
-            placeholder="Add rubric, links, or specific study chapters here..."
-            defaultValue={task.description || ''}
-          ></textarea>
+            className="textarea textarea-bordered bg-base-100 text-base h-40 w-full text-base-content/90 leading-relaxed focus:outline-primary border-base-content/10 resize-none overflow-x-hidden transition-colors" 
+            placeholder="Add rubrics, links, or specific thoughts here..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={handleSaveNotes}
+          />
         </div>
 
-        <div>
-          <label className="label px-0">
-            <span className="label-text font-bold text-base-content/70">Sub-tasks</span>
-          </label>
-          <ul className="space-y-3">
-            <li className="flex items-center gap-3">
-              <input type="checkbox" className="checkbox checkbox-primary checkbox-sm rounded" /> 
-              <span className="text-sm">Step 1</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <input type="checkbox" className="checkbox checkbox-primary checkbox-sm rounded" /> 
-              <span className="text-sm">Step 2</span>
-            </li>
-          </ul>
-        </div>
+        {activeTask.subtasks && activeTask.subtasks.length > 0 && (
+          <div className="space-y-3 w-full min-w-0">
+            <h3 className="text-sm font-bold text-base-content/50 uppercase tracking-wider">Sub-tasks</h3>
+            <ul className="space-y-2.5 w-full bg-base-100 border border-base-content/10 rounded-xl p-3"> 
+              {activeTask.subtasks.map((subtask) => (
+                <li key={subtask.id} className="flex items-start gap-3 w-full min-w-0 p-2 hover:bg-base-200/50 rounded-lg transition-colors"> 
+                  <input 
+                    type="checkbox" 
+                    className="checkbox checkbox-primary checkbox-sm rounded mt-0.5 shrink-0" 
+                    checked={subtask.isCompleted}
+                    onChange={() => handleSubtaskToggle(subtask.id)}
+                  /> 
+                  <span className={`text-sm leading-snug wrap-break-word flex-1 min-w-0 ${subtask.isCompleted ? 'line-through text-base-content/40' : 'text-base-content/90'}`}>
+                    {subtask.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-base-content/5 bg-base-200/30">
-        <button className="btn btn-primary w-full shadow-sm" onClick={onClose}>
-          Mark as Complete
+      <div className="p-5 border-t border-base-content/10 bg-base-100/80 backdrop-blur-md shrink-0 w-full">
+        <button 
+          className={`btn w-full shadow-sm font-semibold text-base transition-all ${
+            activeTask.status === 'completed' 
+              ? 'btn-outline border-base-content/20 text-base-content/60 hover:btn-error' 
+              : 'btn-primary text-primary-content hover:shadow-md hover:-translate-y-0.5'
+          }`} 
+          onClick={handleComplete}
+        >
+          {activeTask.status === 'completed' ? 'Restore Task' : 'Mark as Complete'}
         </button>
       </div>
     </aside>
