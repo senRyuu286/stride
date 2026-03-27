@@ -166,12 +166,12 @@ function NewTaskModal({
                   }}
                 >
                   {existingCategories.map((cat) => (
-                    <option key={cat} value={cat}>
+                    <option key={cat} value={cat} className="bg-base-100">
                       {cat}
                     </option>
                   ))}
-                  <option disabled>──────────</option>
-                  <option value="+++NEW+++">+ Add New Project...</option>
+                  <option disabled className="bg-base-100">──────────</option>
+                  <option value="+++NEW+++" className="bg-base-100">+ Add New Project...</option>
                 </select>
               ) : (
                 <div className="flex gap-2">
@@ -204,10 +204,10 @@ function NewTaskModal({
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as PriorityLevel)}
               >
-                <option value="None">None</option>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
+                <option value="None" className="bg-base-100">None</option>
+                <option value="Low" className="bg-base-100">Low</option>
+                <option value="Medium" className="bg-base-100">Medium</option>
+                <option value="High" className="bg-base-100">High</option>
               </select>
             </div>
           </div>
@@ -314,6 +314,9 @@ export default function Dashboard() {
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
 
+  // Added the new state here inside the Dashboard component
+  const [isDeleteAllConfirmOpen, setIsDeleteAllConfirmOpen] = useState(false);
+
   const [theme, setTheme] = useState(
     () => localStorage.getItem("stride-theme") || "system",
   );
@@ -335,21 +338,14 @@ export default function Dashboard() {
     document.documentElement.setAttribute("data-theme", activeTheme);
   }, [theme]);
 
+  // Updated functions inside the Dashboard component
   const handleDeleteAllData = () => {
-    if (
-      confirm(
-        "⚠️ Are you sure? This will delete ALL tasks and settings. This cannot be undone.",
-      )
-    ) {
-      if (
-        confirm(
-          "🚨 FINAL CONFIRMATION: Are you absolutely sure you want to wipe everything?",
-        )
-      ) {
-        localStorage.clear();
-        window.location.reload();
-      }
-    }
+    setIsDeleteAllConfirmOpen(true);
+  };
+
+  const executeDataWipe = () => {
+    localStorage.clear();
+    window.location.reload();
   };
 
   const renderCenterPane = () => {
@@ -456,9 +452,9 @@ export default function Dashboard() {
                   value={theme}
                   onChange={(e) => setTheme(e.target.value)}
                 >
-                  <option value="system">System Default</option>
-                  <option value="light">Stride Light</option>
-                  <option value="dark">Stride Dark</option>
+                  <option value="system" className="bg-base-100">System Default</option>
+                  <option value="light" className="bg-base-100">Stride Light</option>
+                  <option value="dark" className="bg-base-100">Stride Dark</option>
                 </select>
               </div>
               <div className="pt-4 border-t border-base-content/10 mt-6">
@@ -487,6 +483,30 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Added the new Delete All Confirmation Modal here */}
+        {isDeleteAllConfirmOpen && (
+          <div className="modal modal-open bg-black/40 backdrop-blur-sm z-60">
+            <div className="modal-box bg-base-100 border border-error/20 shadow-2xl">
+              <h3 className="font-bold text-xl mb-4 text-error">🚨 Final Confirmation</h3>
+              <p className="opacity-80 mb-4">
+                Are you absolutely sure? This will wipe <strong>everything</strong>: all tasks, projects, workspaces, and settings. 
+              </p>
+              <p className="opacity-80 font-bold uppercase text-xs text-error">
+                This action cannot be undone.
+              </p>
+              <div className="modal-action mt-6">
+                <button className="btn btn-ghost" onClick={() => setIsDeleteAllConfirmOpen(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-error" onClick={executeDataWipe}>
+                  Yes, Delete Everything
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
       </div>
     </TaskProvider>
   );
