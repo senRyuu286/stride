@@ -1,127 +1,36 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { 
   Zap, Brain, ListTodo, CalendarRange, 
   Archive, Settings, ShieldCheck, Plus, 
   ChevronDown, Check, FolderPlus, Trash2, Edit2
 } from 'lucide-react';
-import type { ViewState } from '../pages/Dashboard';
-import { useTasks, type Task } from '../context/TaskContext';
-
-interface SidebarProps {
-  activeView: ViewState;
-  onNavigate: (view: ViewState) => void;
-  onOpenSettings: () => void;
-  onOpenNewTask: () => void;
-}
-
-type ModalState = 'none' | 'create' | 'rename' | 'delete' | 'cannotDelete';
+import { useSidebarWorkspace } from '../hooks/useSidebarWorkspace';
+import { WorkspaceNameModal } from '../modals/WorkspaceNameModal';
+import { DeleteWorkspaceModal } from '../modals/DeleteWorkspaceModal';
+import { CannotDeleteWorkspaceModal } from '../modals/CannotDeleteWorkspaceModal';
+import type { SidebarProps } from '../types/sidebar';
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, onOpenSettings, onOpenNewTask }) => {
-  const { 
+  const {
     workspaces, 
+    activeWorkspace,
     activeWorkspaceId, 
     setActiveWorkspaceId, 
     activeCategory, 
     setActiveCategory, 
-    upcomingTasks, 
-    dailyTasks,
-    addWorkspace,
-    updateWorkspace,
-    deleteWorkspace
-  } = useTasks();
-
-  const activeWorkspace = workspaces.find(ws => ws.id === activeWorkspaceId);
-
-  // Modal States
-  const [modalState, setModalState] = useState<ModalState>('none');
-  const [inputValue, setInputValue] = useState('');
-
-  const { dynamicProjects, brainDumpCount } = useMemo(() => {
-    const counts: Record<string, number> = {};
-    let dumpCount = 0;
-    
-    const allTasks = [
-      ...upcomingTasks,
-      ...dailyTasks.filter((t): t is Task => t !== null)
-    ];
-
-    const activeWorkspaceTasks = allTasks.filter(task => 
-      task.workspaceId === activeWorkspaceId && task.status !== 'completed'
-    );
-
-    activeWorkspaceTasks.forEach(task => {
-      const projectName = task.category || 'Uncategorized';
-      if (projectName === 'Brain Dump') {
-        dumpCount++;
-      } else {
-        counts[projectName] = (counts[projectName] || 0) + 1;
-      }
-    });
-
-    const colors = ['bg-primary', 'bg-secondary', 'bg-accent', 'bg-info', 'bg-warning'];
-    
-    const projects = Object.entries(counts).map(([name, count], index) => ({
-      id: name,
-      name,
-      count,
-      color: colors[index % colors.length]
-    }));
-
-    return { dynamicProjects: projects, brainDumpCount: dumpCount };
-  }, [upcomingTasks, dailyTasks, activeWorkspaceId]);
-
-  const closeDropdown = () => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  };
-
-  const closeModal = () => {
-    setModalState('none');
-    setInputValue('');
-  };
-
-  // --- Handlers for opening modals ---
-  const handleCreateWorkspace = () => {
-    closeDropdown();
-    setInputValue('');
-    setModalState('create');
-  };
-
-  const handleRenameWorkspace = () => {
-    closeDropdown();
-    if (!activeWorkspace) return;
-    setInputValue(activeWorkspace.name);
-    setModalState('rename');
-  };
-
-  const handleDeleteWorkspace = () => {
-    closeDropdown();
-    if (workspaces.length <= 1) {
-      setModalState('cannotDelete');
-      return;
-    }
-    setModalState('delete');
-  };
-
-  // --- Handlers for saving modal data ---
-  const submitWorkspaceAction = () => {
-    if (modalState === 'create' && inputValue.trim()) {
-      addWorkspace(inputValue.trim());
-    } else if (modalState === 'rename' && inputValue.trim() && activeWorkspace) {
-      if (inputValue.trim() !== activeWorkspace.name) {
-        updateWorkspace(activeWorkspace.id, { name: inputValue.trim() });
-      }
-    }
-    closeModal();
-  };
-
-  const confirmDeleteWorkspace = () => {
-    if (activeWorkspace) {
-      deleteWorkspace(activeWorkspaceId);
-    }
-    closeModal();
-  };
+    dynamicProjects,
+    brainDumpCount,
+    modalState,
+    inputValue,
+    setInputValue,
+    closeDropdown,
+    closeModal,
+    openCreateWorkspaceModal,
+    openRenameWorkspaceModal,
+    openDeleteWorkspaceModal,
+    submitWorkspaceAction,
+    confirmDeleteWorkspace,
+  } = useSidebarWorkspace();
 
   return (
     <>
@@ -164,9 +73,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, onOpen
               <div className="divider my-1 opacity-20"></div>
               
               <li className="menu-title text-[10px] uppercase opacity-50 pb-1">Manage</li>
-              <li><a onClick={handleCreateWorkspace}><FolderPlus size={14} className="opacity-70" /> Create Workspace</a></li>
-              <li><a onClick={handleRenameWorkspace}><Edit2 size={14} className="opacity-70" /> Rename Current</a></li>
-              <li><a onClick={handleDeleteWorkspace} className="text-error hover:bg-error/10 hover:text-error"><Trash2 size={14} /> Delete Current</a></li>
+              <li><a onClick={openCreateWorkspaceModal}><FolderPlus size={14} className="opacity-70" /> Create Workspace</a></li>
+              <li><a onClick={openRenameWorkspaceModal}><Edit2 size={14} className="opacity-70" /> Rename Current</a></li>
+              <li><a onClick={openDeleteWorkspaceModal} className="text-error hover:bg-error/10 hover:text-error"><Trash2 size={14} /> Delete Current</a></li>
             </ul>
           </div>
         </div>
@@ -295,76 +204,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, onOpen
 
       </aside>
 
-      {/* --- CUSTOM MODALS FOR WORKSPACE ACTIONS --- */}
-      
-      {/* Create / Rename Modal */}
-      {(modalState === 'create' || modalState === 'rename') && (
-        <div className="modal modal-open bg-black/40 backdrop-blur-sm z-50">
-          <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl">
-            <h3 className="font-bold text-xl mb-4">
-              {modalState === 'create' ? 'Create Workspace' : 'Rename Workspace'}
-            </h3>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium mb-4">Workspace Name</span>
-              </label>
-              <input 
-                autoFocus
-                type="text" 
-                className="input input-bordered w-full bg-base-200/50" 
-                value={inputValue} 
-                onChange={(e) => setInputValue(e.target.value)} 
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') submitWorkspaceAction();
-                }}
-                placeholder="e.g., Spring Semester"
-              />
-            </div>
-            <div className="modal-action mt-6">
-              <button className="btn btn-ghost" onClick={closeModal}>Cancel</button>
-              <button 
-                className="btn btn-primary" 
-                onClick={submitWorkspaceAction}
-                disabled={!inputValue.trim()}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <WorkspaceNameModal
+        isOpen={modalState === 'create' || modalState === 'rename'}
+        mode={modalState === 'rename' ? 'rename' : 'create'}
+        value={inputValue}
+        onChange={setInputValue}
+        onCancel={closeModal}
+        onSave={submitWorkspaceAction}
+      />
 
-      {/* Delete Confirmation Modal */}
-      {modalState === 'delete' && (
-        <div className="modal modal-open bg-black/40 backdrop-blur-sm z-50">
-          <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl">
-            <h3 className="font-bold text-xl mb-4 text-error">Delete Workspace</h3>
-            <p className="opacity-80">
-              Are you sure you want to delete <span className="font-semibold text-base-content">"{activeWorkspace?.name}"</span>? 
-              This action cannot be undone and will permanently erase all associated tasks.
-            </p>
-            <div className="modal-action mt-6">
-              <button className="btn btn-ghost" onClick={closeModal}>Cancel</button>
-              <button className="btn btn-error" onClick={confirmDeleteWorkspace}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteWorkspaceModal
+        isOpen={modalState === 'delete'}
+        workspaceName={activeWorkspace?.name}
+        onCancel={closeModal}
+        onConfirm={confirmDeleteWorkspace}
+      />
 
-      {/* Cannot Delete Modal (Only 1 workspace left) */}
-      {modalState === 'cannotDelete' && (
-        <div className="modal modal-open bg-black/40 backdrop-blur-sm z-50">
-          <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl">
-            <h3 className="font-bold text-xl mb-4 text-warning">Action Denied</h3>
-            <p className="opacity-80">
-              You cannot delete your only workspace. Please create a new workspace before attempting to delete this one.
-            </p>
-            <div className="modal-action mt-6">
-              <button className="btn btn-ghost" onClick={closeModal}>Got it</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CannotDeleteWorkspaceModal
+        isOpen={modalState === 'cannotDelete'}
+        onClose={closeModal}
+      />
     </>
   );
 };

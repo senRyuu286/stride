@@ -1,85 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Trash2, Calendar, FolderOutput } from 'lucide-react';
-import { useTasks, type Task } from '../context/TaskContext';
-
-interface TaskDetailsProps {
-  task: Task;
-  onClose: () => void;
-  onEditTask: (task: Task) => void;
-}
-
-function getDaysLeft(dueDateStr: string | null): number | null {
-  if (!dueDateStr) return null;
-  const due = new Date(dueDateStr);
-  const now = new Date();
-
-  due.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
-  
-  const diffTime = due.getTime() - now.getTime();
-  return Math.round(diffTime / (1000 * 60 * 60 * 24));
-}
-
-function formatFullDate(dueDateStr: string | null): string {
-  if (!dueDateStr) return "";
-  return new Date(dueDateStr).toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short', 
-    day: 'numeric',
-    year: 'numeric'
-  });
-}
+import { useTaskDetails } from '../hooks/useTaskDetails';
+import { DeleteTaskModal } from '../modals/DeleteTaskModal';
+import type { TaskDetailsProps } from '../types/components';
 
 export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
-  const { upcomingTasks, dailyTasks, updateTask, toggleTaskCompletion, deleteTask } = useTasks();
+  const {
+    activeTask,
+    notes,
+    setNotes,
+    daysLeft,
+    formattedDate,
+    syncNotesFromTask,
+    saveNotes,
+    completeTask,
+    toggleSubtask,
+    deleteCurrentTask,
+  } = useTaskDetails(task, onClose);
 
-  const activeTask = upcomingTasks.find(t => t.id === task.id) 
-                  || dailyTasks.find(t => t?.id === task.id) 
-                  || task;
-
-  const [notes, setNotes] = useState(activeTask.description || '');
-  const daysLeft = getDaysLeft(activeTask.dueDate);
-  const formattedDate = formatFullDate(activeTask.dueDate);
+  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
 
   useEffect(() => {
-    setNotes(activeTask.description || '');
-  }, [activeTask.id, activeTask.description]);
-
-  const handleSaveNotes = () => {
-    if (notes !== activeTask.description) {
-      updateTask(activeTask.id, { description: notes });
-    }
-  };
-
-  const handleComplete = () => {
-    if (activeTask.status !== 'completed' && activeTask.subtasks.length > 0) {
-      const completedSubtasks = activeTask.subtasks.map(subtask => ({
-        ...subtask,
-        isCompleted: true
-      }));
-      updateTask(activeTask.id, { subtasks: completedSubtasks });
-    }
-
-    toggleTaskCompletion(activeTask.id);
-    onClose(); 
-  };
-
-  const handleSubtaskToggle = (subtaskId: string) => {
-    const updatedSubtasks = activeTask.subtasks.map(subtask => 
-      subtask.id === subtaskId 
-        ? { ...subtask, isCompleted: !subtask.isCompleted } 
-        : subtask
-    );
-    updateTask(activeTask.id, { subtasks: updatedSubtasks });
-  };
-
-  const handleDelete = () => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${activeTask.title}"?`);
-    if (confirmed) {
-      deleteTask(activeTask.id);
-      onClose(); 
-    }
-  };
+    syncNotesFromTask();
+  }, [syncNotesFromTask]);
 
   return (
     <aside className="w-full md:w-80 lg:w-100 bg-base-100/95 backdrop-blur-2xl border-l border-base-content/10 flex flex-col z-50 absolute right-0 inset-y-0 md:relative md:h-full shrink-0 shadow-2xl max-w-full overflow-hidden">
@@ -114,7 +57,7 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
 
           <button 
             className="btn btn-sm btn-square btn-ghost text-base-content/40 hover:text-error transition-colors"
-            onClick={handleDelete}
+            onClick={() => setIsDeleteTaskModalOpen(true)}
             aria-label="Delete task"
             title="Delete Task"
           >
@@ -177,7 +120,7 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
             placeholder="Add rubrics, links, or specific thoughts here..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            onBlur={handleSaveNotes}
+            onBlur={saveNotes}
           />
         </div>
 
@@ -191,7 +134,7 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
                     type="checkbox" 
                     className="checkbox checkbox-primary checkbox-sm rounded mt-0.5 shrink-0" 
                     checked={subtask.isCompleted}
-                    onChange={() => handleSubtaskToggle(subtask.id)}
+                    onChange={() => toggleSubtask(subtask.id)}
                   /> 
                   <span className={`text-sm leading-snug wrap-break-word flex-1 min-w-0 ${subtask.isCompleted ? 'line-through text-base-content/40' : 'text-base-content/90'}`}>
                     {subtask.title}
@@ -210,11 +153,18 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
               ? 'btn-outline border-base-content/20 text-base-content/60 hover:btn-error' 
               : 'btn-primary text-primary-content hover:shadow-md hover:-translate-y-0.5'
           }`} 
-          onClick={handleComplete}
+          onClick={completeTask}
         >
           {activeTask.status === 'completed' ? 'Restore Task' : 'Mark as Complete'}
         </button>
       </div>
+
+      <DeleteTaskModal
+        isOpen={isDeleteTaskModalOpen}
+        taskTitle={activeTask.title}
+        onCancel={() => setIsDeleteTaskModalOpen(false)}
+        onConfirm={deleteCurrentTask}
+      />
     </aside>
   );
 }

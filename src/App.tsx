@@ -4,14 +4,18 @@ import Dashboard from './pages/Dashboard';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem('hasSeenOnboarding'),
+  );
 
   useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    if (!hasSeenOnboarding) {
-      setShowOnboarding(true);
-    }
-    setIsLoading(false);
+    const loadingTimeout = window.setTimeout(() => {
+      setIsLoading(false);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(loadingTimeout);
+    };
   }, []);
 
   const handleFinishOnboarding = () => {

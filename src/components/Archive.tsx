@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Archive as ArchiveIcon, CheckCircle2, RotateCcw, Calendar } from "lucide-react";
-import { useTasks, type Task } from "../context/TaskContext";
+import { type Task } from "../context/TaskContext";
+import { useTasks } from "../hooks/useTasks";
+import { mergeTaskLists } from "../utils/taskHelpers";
 
 export interface ArchiveProps {
   onTaskSelect: (task: Task) => void;
@@ -15,12 +17,7 @@ export default function Archive({ onTaskSelect }: ArchiveProps) {
   } = useTasks();
 
   const archivedTasks = useMemo(() => {
-    const combined = [
-      ...upcomingTasks,
-      ...dailyTasks.filter((t): t is Task => t !== null),
-    ];
-    
-    return combined.filter(
+    return mergeTaskLists(upcomingTasks, dailyTasks).filter(
       (t) => t.workspaceId === activeWorkspaceId && t.status === 'completed'
     );
   }, [upcomingTasks, dailyTasks, activeWorkspaceId]);

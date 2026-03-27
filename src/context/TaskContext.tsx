@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { useState, useEffect, type ReactNode } from 'react';
+import { BRAIN_DUMP_CATEGORY, createId } from '../utils/taskHelpers';
+import { TaskContext } from './TaskContextInstance';
 
 export type PriorityLevel = 'High' | 'Medium' | 'Low' | 'None';
 export type TaskStatus = 'todo' | 'in-progress' | 'completed';
@@ -28,7 +30,7 @@ export interface Task {
   tags: string[];
 }
 
-interface TaskContextType {
+export interface TaskContextType {
   workspaces: Workspace[];
   activeWorkspaceId: string;
   setActiveWorkspaceId: (id: string) => void;
@@ -47,17 +49,13 @@ interface TaskContextType {
   toggleTaskCompletion: (taskId: string) => void;
 }
 
-const TaskContext = createContext<TaskContextType | undefined>(undefined);
-
 export function TaskProvider({ children }: { children: ReactNode }) {
-  // --- STATE INITIALIZATION (CLEAN) ---
   const [workspaces, setWorkspaces] = useState<Workspace[]>(() => {
     const saved = localStorage.getItem('focus_workspaces');
-    // If no workspaces exist, provide a default one
     return saved ? JSON.parse(saved) : [{ id: 'ws_default', name: 'My Workspace' }];
   });
 
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(() => {
+  const [activeWorkspaceId, setActiveWorkspaceIdState] = useState<string>(() => {
     const saved = localStorage.getItem('focus_activeWorkspaceId');
     return saved ? JSON.parse(saved) : 'ws_default';
   });
@@ -69,7 +67,6 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
   const [dailyTasks, setDailyTasks] = useState<(Task | null)[]>(() => {
     const saved = localStorage.getItem('focus_dailyTasks');
-    // Start with 3 empty slots for the Focus view
     return saved ? JSON.parse(saved) : [null, null, null];
   });
 
@@ -78,24 +75,25 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : 'All';
   });
 
-  // --- PERSISTENCE ---
   useEffect(() => { localStorage.setItem('focus_workspaces', JSON.stringify(workspaces)); }, [workspaces]);
   useEffect(() => { localStorage.setItem('focus_activeWorkspaceId', JSON.stringify(activeWorkspaceId)); }, [activeWorkspaceId]);
   useEffect(() => { localStorage.setItem('focus_upcomingTasks', JSON.stringify(upcomingTasks)); }, [upcomingTasks]);
   useEffect(() => { localStorage.setItem('focus_dailyTasks', JSON.stringify(dailyTasks)); }, [dailyTasks]);
   useEffect(() => { localStorage.setItem('focus_activeCategory', JSON.stringify(activeCategory)); }, [activeCategory]);
-  
-  // Reset category filter when switching workspaces
-  useEffect(() => { setActiveCategory('All'); }, [activeWorkspaceId]); 
 
-  // --- ACTIONS ---
+  const setActiveWorkspaceId = (id: string) => {
+    setActiveWorkspaceIdState(id);
+    setActiveCategory('All');
+  };
+
   const addWorkspace = (name: string) => {
     const newWorkspace: Workspace = {
-      id: 'ws_' + Math.random().toString(36).substring(2, 9),
+      id: `ws_${createId()}`,
       name: name
     };
     setWorkspaces((prev) => [...prev, newWorkspace]);
-    setActiveWorkspaceId(newWorkspace.id);
+    setActiveWorkspaceIdState(newWorkspace.id);
+    setActiveCategory('All');
   };
 
   const updateWorkspace = (id: string, updates: Partial<Workspace>) => {
@@ -106,7 +104,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     setWorkspaces((prev) => {
       const filtered = prev.filter((ws) => ws.id !== id);
       if (activeWorkspaceId === id && filtered.length > 0) {
-        setActiveWorkspaceId(filtered[0].id);
+        setActiveWorkspaceIdState(filtered[0].id);
+        setActiveCategory('All');
       }
       return filtered;
     });
@@ -114,10 +113,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
 
   const addTask = (newTaskData: Pick<Task, 'title' | 'workspaceId'> & Partial<Task>) => {
     const newTask: Task = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: createId(),
       workspaceId: newTaskData.workspaceId,
       title: newTaskData.title,
-      category: newTaskData.category || 'Brain Dump',
+      category: newTaskData.category || BRAIN_DUMP_CATEGORY,
       dueDate: newTaskData.dueDate || null,
       completionDate: newTaskData.completionDate || null,
       description: newTaskData.description || '',
@@ -170,10 +169,4 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       {children}
     </TaskContext.Provider>
   );
-}
-
-export function useTasks() {
-  const context = useContext(TaskContext);
-  if (context === undefined) throw new Error('useTasks must be used within a TaskProvider');
-  return context;
 }

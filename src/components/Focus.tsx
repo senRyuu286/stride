@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useTasks, type Task } from '../context/TaskContext';
+import { type Task } from '../context/TaskContext';
+import { useTasks } from '../hooks/useTasks';
 import { Zap } from "lucide-react";
+import { BRAIN_DUMP_CATEGORY } from '../utils/taskHelpers';
 
 export interface FocusProps {
   onTaskSelect: (task: Task) => void;
@@ -65,7 +67,7 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     const workspaceTasks = upcomingTasks.filter(t => 
       t.workspaceId === activeWorkspaceId && 
       t.status !== 'completed' &&
-      t.category !== 'Brain Dump'
+      t.category !== BRAIN_DUMP_CATEGORY
     );
     const uniqueCategories = Array.from(new Set(workspaceTasks.map(t => t.category).filter(Boolean)));
     return ['All', ...uniqueCategories];
@@ -76,7 +78,7 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     let tasks = upcomingTasks.filter(t => 
       t.workspaceId === activeWorkspaceId && 
       t.status !== 'completed' &&
-      t.category !== 'Brain Dump'
+      t.category !== BRAIN_DUMP_CATEGORY
     );
     
     if (activeCategory !== 'All') {
@@ -119,7 +121,7 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     const otherWsTasks = dailyTasks.filter(t => t && t.workspaceId !== activeWorkspaceId) as Task[];
     
     const existingTask = workspaceDailySlots[slotIndex];
-    let newWsTasks = currentWsTasks.filter(t => t.id !== draggedTask.id);
+    const newWsTasks = currentWsTasks.filter(t => t.id !== draggedTask.id);
     
     if (existingTask && existingTask.id !== draggedTask.id) {
       setUpcomingTasks(prev => [...prev, existingTask]);

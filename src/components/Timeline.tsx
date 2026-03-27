@@ -1,9 +1,113 @@
-import { useMemo } from "react";
+import { useMemo, type ComponentType } from "react";
 import { CalendarDays, Clock, AlertCircle, Calendar as CalendarIcon, Flag, Circle, CheckCircle2 } from "lucide-react";
-import { useTasks, type Task } from "../context/TaskContext";
+import { type Task } from "../context/TaskContext";
+import { useTasks } from "../hooks/useTasks";
+import { mergeTaskLists } from "../utils/taskHelpers";
 
 export interface TimelineProps {
   onTaskSelect: (task: Task) => void;
+}
+
+interface TimelineSectionProps {
+  title: "Overdue" | "Today" | "Tomorrow" | "Upcoming";
+  tasks: Task[];
+  icon: ComponentType<{ size?: number; className?: string }>;
+  colorClass: string;
+  onTaskSelect: (task: Task) => void;
+  onToggleTaskCompletion: (taskId: string) => void;
+  isLast?: boolean;
+}
+
+function formatTimelineTime(isoString: string) {
+  return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatTimelineDate(isoString: string) {
+  return new Date(isoString).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function TimelineSection({
+  title,
+  tasks,
+  icon: Icon,
+  colorClass,
+  onTaskSelect,
+  onToggleTaskCompletion,
+  isLast = false,
+}: TimelineSectionProps) {
+  if (tasks.length === 0) return null;
+
+  return (
+    <div className="relative pl-12 pb-10">
+      {!isLast && (
+        <div className="absolute left-4 top-8 -bottom-2.5 w-px bg-base-content/10"></div>
+      )}
+      
+      <div className={`absolute left-0 top-0 w-8 h-8 rounded-full flex items-center justify-center bg-base-100 border-2 ${colorClass} z-10`}>
+        <Icon size={14} className={colorClass.replace('border-', 'text-')} />
+      </div>
+
+      <h2 className="text-xl font-bold mb-4 flex items-center gap-3 h-8">
+        {title}
+        <span className="badge badge-sm badge-ghost opacity-60">{tasks.length}</span>
+      </h2>
+
+      <div className="space-y-3">
+        {tasks.map((task: Task) => (
+          <div 
+            key={task.id}
+            onClick={() => onTaskSelect(task)}
+            className={`group flex items-center gap-3 p-3 bg-base-100 rounded-xl border border-base-content/10 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer ${
+              task.status === 'completed' ? 'opacity-60' : ''
+            }`}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleTaskCompletion(task.id);
+              }}
+              className="text-base-content/30 hover:text-success transition-colors shrink-0"
+            >
+              {task.status === 'completed' ? (
+                <CheckCircle2 size={20} className="text-success" />
+              ) : (
+                <Circle size={20} />
+              )}
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <h4 className={`font-medium truncate ${task.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
+                {task.title}
+              </h4>
+              {task.category && (
+                <p className="text-xs opacity-60 truncate mt-0.5">{task.category}</p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 text-xs font-medium">
+              {task.priority !== 'None' && (
+                <div className="flex items-center gap-1 opacity-70">
+                  <Flag size={14} className={
+                    task.priority === 'High' ? 'text-error' : 
+                    task.priority === 'Medium' ? 'text-warning' : 
+                    'text-info'
+                  } />
+                </div>
+              )}
+              
+              <div className="flex items-center gap-1.5 bg-base-200/50 px-2.5 py-1 rounded-md">
+                <Clock size={12} className="opacity-50" />
+                <span className={title === 'Overdue' ? 'text-error font-semibold' : 'opacity-70'}>
+                  {title === 'Upcoming' ? `${formatTimelineDate(task.dueDate!)} - ` : ''}
+                  {formatTimelineTime(task.dueDate!)}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function Timeline({ onTaskSelect }: TimelineProps) {
@@ -15,12 +119,7 @@ export default function Timeline({ onTaskSelect }: TimelineProps) {
   } = useTasks();
 
   const timelineTasks = useMemo(() => {
-    const combined = [
-      ...upcomingTasks,
-      ...dailyTasks.filter((t): t is Task => t !== null),
-    ];
-    
-    return combined.filter(
+    return mergeTaskLists(upcomingTasks, dailyTasks).filter(
       (t) => t.workspaceId === activeWorkspaceId && t.dueDate
     );
   }, [upcomingTasks, dailyTasks, activeWorkspaceId]);
@@ -62,89 +161,6 @@ export default function Timeline({ onTaskSelect }: TimelineProps) {
     return groups;
   }, [timelineTasks]);
 
-  const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-  const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  };
-
-  const TimelineSection = ({ title, tasks, icon: Icon, colorClass, isLast = false }: any) => {
-    if (tasks.length === 0) return null;
-
-    return (
-      <div className="relative pl-12 pb-10">
-        {!isLast && (
-          <div className="absolute left-4 top-8 -bottom-2.5 w-px bg-base-content/10"></div>
-        )}
-        
-        <div className={`absolute left-0 top-0 w-8 h-8 rounded-full flex items-center justify-center bg-base-100 border-2 ${colorClass} z-10`}>
-          <Icon size={14} className={colorClass.replace('border-', 'text-')} />
-        </div>
-
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-3 h-8">
-          {title}
-          <span className="badge badge-sm badge-ghost opacity-60">{tasks.length}</span>
-        </h2>
-
-        <div className="space-y-3">
-          {tasks.map((task: Task) => (
-            <div 
-              key={task.id}
-              onClick={() => onTaskSelect(task)}
-              className={`group flex items-center gap-3 p-3 bg-base-100 rounded-xl border border-base-content/10 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer ${
-                task.status === 'completed' ? 'opacity-60' : ''
-              }`}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleTaskCompletion(task.id);
-                }}
-                className="text-base-content/30 hover:text-success transition-colors shrink-0"
-              >
-                {task.status === 'completed' ? (
-                  <CheckCircle2 size={20} className="text-success" />
-                ) : (
-                  <Circle size={20} />
-                )}
-              </button>
-
-              <div className="flex-1 min-w-0">
-                <h4 className={`font-medium truncate ${task.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
-                  {task.title}
-                </h4>
-                {task.category && (
-                  <p className="text-xs opacity-60 truncate mt-0.5">{task.category}</p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0 text-xs font-medium">
-                {task.priority !== 'None' && (
-                  <div className="flex items-center gap-1 opacity-70">
-                    <Flag size={14} className={
-                      task.priority === 'High' ? 'text-error' : 
-                      task.priority === 'Medium' ? 'text-warning' : 
-                      'text-info'
-                    } />
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-1.5 bg-base-200/50 px-2.5 py-1 rounded-md">
-                  <Clock size={12} className="opacity-50" />
-                  <span className={title === 'Overdue' ? 'text-error font-semibold' : 'opacity-70'}>
-                    {title === 'Upcoming' ? `${formatDate(task.dueDate!)} - ` : ''}
-                    {formatTime(task.dueDate!)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   const hasAnyTasks = Object.values(groupedTasks).some(group => group.length > 0);
 
   return (
@@ -175,24 +191,32 @@ export default function Timeline({ onTaskSelect }: TimelineProps) {
               tasks={groupedTasks.overdue} 
               icon={AlertCircle} 
               colorClass="border-error text-error" 
+              onTaskSelect={onTaskSelect}
+              onToggleTaskCompletion={toggleTaskCompletion}
             />
             <TimelineSection 
               title="Today" 
               tasks={groupedTasks.today} 
               icon={Clock} 
               colorClass="border-primary text-primary" 
+              onTaskSelect={onTaskSelect}
+              onToggleTaskCompletion={toggleTaskCompletion}
             />
             <TimelineSection 
               title="Tomorrow" 
               tasks={groupedTasks.tomorrow} 
               icon={CalendarDays} 
               colorClass="border-info text-info" 
+              onTaskSelect={onTaskSelect}
+              onToggleTaskCompletion={toggleTaskCompletion}
             />
             <TimelineSection 
               title="Upcoming" 
               tasks={groupedTasks.upcoming} 
               icon={CalendarIcon} 
               colorClass="border-base-content/30 text-base-content/50" 
+              onTaskSelect={onTaskSelect}
+              onToggleTaskCompletion={toggleTaskCompletion}
               isLast={true}
             />
           </div>

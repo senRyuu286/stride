@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Folder, Circle, CheckCircle2, Calendar, Flag, ListTodo } from "lucide-react";
-import { useTasks, type Task } from "../context/TaskContext";
+import { type Task } from "../context/TaskContext";
+import { useTasks } from "../hooks/useTasks";
+import { BRAIN_DUMP_CATEGORY, mergeTaskLists } from "../utils/taskHelpers";
 
 export interface AllTasksProps {
   onTaskSelect: (task: Task) => void;
@@ -15,13 +17,8 @@ export default function AllTasks({ onTaskSelect }: AllTasksProps) {
   } = useTasks();
 
   const workspaceTasks = useMemo(() => {
-    const combined = [
-      ...upcomingTasks,
-      ...dailyTasks.filter((t): t is Task => t !== null),
-    ];
-    
-    return combined.filter(
-      (t) => t.workspaceId === activeWorkspaceId && t.category !== "Brain Dump"
+    return mergeTaskLists(upcomingTasks, dailyTasks).filter(
+      (t) => t.workspaceId === activeWorkspaceId && t.category !== BRAIN_DUMP_CATEGORY
     );
   }, [upcomingTasks, dailyTasks, activeWorkspaceId]);
 

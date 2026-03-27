@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   Brain,
   Plus,
@@ -7,117 +6,27 @@ import {
   CheckSquare,
   AlertOctagon,
 } from "lucide-react";
-import { useTasks, type Task } from "../context/TaskContext";
-
-export interface BrainDumpProps {
-  onTaskSelect: (task: Task) => void;
-}
+import { useBrainDump } from "../hooks/useBrainDump";
+import type { BrainDumpProps } from "../types/components";
 
 export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
-  const { 
-    addTask, 
-    updateTask, 
-    deleteTask, 
-    activeWorkspaceId, 
-    upcomingTasks, 
-    dailyTasks,
-  } = useTasks();
-
-  const [inputValue, setInputValue] = useState("");
-
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
-
-  const allTasks = [
-    ...upcomingTasks,
-    ...dailyTasks.filter((t): t is Task => t !== null),
-  ];
-
-  const brainDumpTasks = allTasks.filter(
-    (task) =>
-      task.workspaceId === activeWorkspaceId &&
-      task.category === "Brain Dump" &&
-      task.status !== "completed",
-  );
-
-  const handleQuickAdd = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!inputValue.trim()) return;
-
-    addTask({
-      title: inputValue.trim(),
-      category: "Brain Dump",
-      workspaceId: activeWorkspaceId,
-      description: "",
-      dueDate: null,
-      priority: "None",
-      tags: [],
-      subtasks: [],
-      status: "todo", 
-    });
-
-    setInputValue("");
-  };
-
-  const handleDelete = (id: string) => {
-    deleteTask(id);
-  };
-
-  const handleSaveEdit = (id: string) => {
-    if (editValue.trim()) {
-      updateTask(id, { title: editValue.trim() });
-    }
-    setEditingId(null);
-  };
-
-  const toggleSelection = (id: string) => {
-    const newSelection = new Set(selectedIds);
-    if (newSelection.has(id)) newSelection.delete(id);
-    else newSelection.add(id);
-    setSelectedIds(newSelection);
-  };
-
-  const handleMergeSelected = () => {
-    const mergedTitle = window.prompt(
-      "Enter a name for the new combined task:",
-    );
-    if (!mergedTitle?.trim()) return;
-
-    const tasksToMerge = brainDumpTasks.filter((t) => selectedIds.has(t.id));
-
-    const newSubtasks = tasksToMerge.map((t) => ({
-      id: Math.random().toString(36).substring(2, 9),
-      title: t.title,
-      isCompleted: false,
-    }));
-
-    addTask({
-      title: mergedTitle.trim(),
-      category: "Brain Dump", 
-      workspaceId: activeWorkspaceId,
-      description: "Merged from multiple Brain Dump thoughts.",
-      dueDate: null,
-      priority: "None",
-      tags: [],
-      subtasks: newSubtasks,
-      status: "todo",
-    });
-
-    tasksToMerge.forEach((t) => deleteTask(t.id));
-    setSelectedIds(new Set());
-  };
-
-  const handleClearAll = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete ALL unprocessed Brain Dump tasks? This cannot be undone.",
-      )
-    ) {
-      brainDumpTasks.forEach((t) => deleteTask(t.id));
-      setSelectedIds(new Set());
-    }
-  };
+  const {
+    inputValue,
+    setInputValue,
+    selectedIds,
+    editingId,
+    setEditingId,
+    editValue,
+    setEditValue,
+    brainDumpTasks,
+    handleQuickAdd,
+    handleDelete,
+    handleSaveEdit,
+    toggleSelection,
+    handleDeleteSelected,
+    handleMergeSelected,
+    handleClearAll,
+  } = useBrainDump();
 
   return (
     <div className="max-w-4xl mx-auto p-8 h-full flex flex-col">
@@ -145,10 +54,7 @@ export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
           )}
           {selectedIds.size > 0 && (
             <button
-              onClick={() => {
-                selectedIds.forEach((id) => deleteTask(id));
-                setSelectedIds(new Set());
-              }}
+              onClick={handleDeleteSelected}
               className="btn btn-sm btn-error btn-outline h-full"
             >
               <Trash2 size={16} /> Delete Selected
