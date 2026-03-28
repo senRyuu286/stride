@@ -27,11 +27,11 @@ export const Topbar: React.FC<TopbarProps> = ({
         <div 
           className="w-20 md:w-24 h-5 md:h-6 bg-base-content transition-colors ml-1 md:ml-0"
           style={{
-            WebkitMaskImage: 'url(./stride.svg)',
+            WebkitMaskImage: `url(${import.meta.env.BASE_URL}/stride.svg)`,
             WebkitMaskSize: 'contain',
             WebkitMaskRepeat: 'no-repeat',
             WebkitMaskPosition: 'left center',
-            maskImage: 'url(./stride.svg)',
+            maskImage: `url(${import.meta.env.BASE_URL}/stride.svg)`,
             maskSize: 'contain',
             maskRepeat: 'no-repeat',
             maskPosition: 'left center',

@@ -47,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, onOpen
             <div tabIndex={0} role="button" className="flex items-center justify-between w-full px-2 py-2 md:py-1.5 hover:bg-base-200/50 rounded-xl md:rounded-lg transition-colors cursor-pointer border border-transparent hover:border-base-content/5">
               <div className="flex items-center gap-3 md:gap-2.5 overflow-hidden">
                 <img 
-                  src="./favicon.svg" 
+                  src={`${import.meta.env.BASE_URL}/favicon.svg`} 
                   alt="Stride Logo" 
                   className="w-6 h-6 md:w-5 md:h-5 shrink-0 object-contain" 
                 />
