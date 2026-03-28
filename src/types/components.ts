@@ -1,4 +1,4 @@
-import type { Task } from "../context/TaskContext";
+import type { Task } from "../store/useTaskStore";
 
 export interface BrainDumpProps {
   onTaskSelect: (task: Task) => void;

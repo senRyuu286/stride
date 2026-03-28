@@ -19,18 +19,29 @@ A lightning-fast, local-first academic command center designed to prevent studen
 
 ## Features
 
-- **The Inbox (Today):** Low-friction, immediate daily tasks.
-- **The Radar (Upcoming):** Quizzes and assignments due within a rolling 7-day window.
-- **The Horizon (Future):** Major exams and midterms with visual progress countdowns.
+- **Workspaces:** Keep your academic subjects, personal projects, and side-hustles cleanly separated and instantly accessible.
+
+- **Focus:** A dedicated drag-and-drop dashboard to isolate and tackle your "Daily 3" high-priority tasks to minimize overwhelm.
+
+- **Brain Dump:** A low-friction catch-all to quickly offload thoughts and pending tasks before organizing them.
+
+- **All Tasks:** A centralized master view to sort, filter, and manage your entire active workload by priority or deadline.
+
+- **Timeline:** A visual representation of your upcoming milestones, exams, and schedule to help you plan ahead.
+
+- **Archive:** A secure log of your completed tasks, keeping your active workspaces clean and clutter-free.
+
 - **Local-First Architecture:** Data is persisted instantly to the browser's storage. Works perfectly offline.
-- **Responsive Design:** Gracefully collapses from a desktop grid into a mobile-friendly tabbed view.
+
+- **Responsive Design:** Gracefully scales from a spacious desktop layout into a highly optimized, touch-friendly mobile interface.
+
 
 ## Acknowledgments
 
 - [React](https://reactjs.org/)
 - [Vite](https://vitejs.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
 - [Zustand](https://github.com/pmndrs/zustand)
+- [Tailwind CSS](https://tailwindcss.com/)
 - [DaisyUI](https://daisyui.com/)
 
 ## Disclaimer

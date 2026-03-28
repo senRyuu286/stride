@@ -3,7 +3,7 @@ import {
   type PriorityLevel,
   type Subtask,
   type Task,
-} from "../context/TaskContext";
+} from "../store/useTaskStore";
 import { useTasks } from "./useTasks";
 import { formatForDateTimeLocal } from "../utils/dateHelpers";
 import { BRAIN_DUMP_CATEGORY, createId, mergeTaskLists } from "../utils/taskHelpers";
@@ -43,9 +43,7 @@ export function useNewTaskModalForm(taskToEdit?: Task | null) {
 
   const handleAddPendingSubtask = (event?: KeyboardEvent | MouseEvent) => {
     event?.preventDefault();
-    if (!subtaskInput.trim()) {
-      return;
-    }
+    if (!subtaskInput.trim()) return;
 
     setPendingSubtasks((current) => [...current, subtaskInput.trim()]);
     setSubtaskInput("");
@@ -56,9 +54,7 @@ export function useNewTaskModalForm(taskToEdit?: Task | null) {
   };
 
   const saveTask = (onClose: () => void) => {
-    if (!title.trim()) {
-      return;
-    }
+    if (!title.trim()) return;
 
     const tagsArray = tagsInput
       .split(",")
@@ -66,6 +62,7 @@ export function useNewTaskModalForm(taskToEdit?: Task | null) {
       .filter((tag) => tag.length > 0);
 
     const formattedDueDate = dueDate ? new Date(dueDate).toISOString() : null;
+    
     const formattedSubtasks: Subtask[] = pendingSubtasks.map((subtaskTitle) => ({
       id: createId(),
       title: subtaskTitle,
@@ -73,7 +70,7 @@ export function useNewTaskModalForm(taskToEdit?: Task | null) {
     }));
 
     const taskData = {
-      title,
+      title: title.trim(),
       category: category.trim() || BRAIN_DUMP_CATEGORY,
       description,
       dueDate: formattedDueDate,

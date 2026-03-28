@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Archive as ArchiveIcon, CheckCircle2, RotateCcw, Calendar } from "lucide-react";
-import { type Task } from "../context/TaskContext";
+import { type Task } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
 import { mergeTaskLists } from "../utils/taskHelpers";
 

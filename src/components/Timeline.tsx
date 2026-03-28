@@ -1,6 +1,6 @@
 import { useMemo, type ComponentType } from "react";
 import { CalendarDays, Clock, AlertCircle, Calendar as CalendarIcon, Flag, Circle, CheckCircle2 } from "lucide-react";
-import { type Task } from "../context/TaskContext";
+import { type Task } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
 import { mergeTaskLists } from "../utils/taskHelpers";
 

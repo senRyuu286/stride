@@ -1,4 +1,4 @@
-import type { Task } from "../context/TaskContext";
+import type { Task } from "../store/useTaskStore";
 import AllTasks from "../components/AllTasks";
 import Archive from "../components/Archive";
 import BrainDump from "../components/BrainDump";
@@ -12,22 +12,23 @@ interface DashboardViewProps {
   onBrainDumpTaskSelect: (task: Task) => void;
 }
 
+const VIEW_COMPONENTS: Record<ViewState, React.ComponentType<any>> = {
+  allTasks: AllTasks,
+  timeline: Timeline,
+  brainDump: BrainDump,
+  archive: Archive,
+  focus: Focus,
+};
+
 export function renderDashboardView({
   activeView,
   onTaskSelect,
   onBrainDumpTaskSelect,
 }: DashboardViewProps) {
-  switch (activeView) {
-    case "allTasks":
-      return <AllTasks onTaskSelect={onTaskSelect} />;
-    case "timeline":
-      return <Timeline onTaskSelect={onTaskSelect} />;
-    case "brainDump":
-      return <BrainDump onTaskSelect={onBrainDumpTaskSelect} />;
-    case "archive":
-      return <Archive onTaskSelect={onTaskSelect} />;
-    case "focus":
-    default:
-      return <Focus onTaskSelect={onTaskSelect} />;
-  }
+  const taskHandler = activeView === "brainDump" ? onBrainDumpTaskSelect : onTaskSelect;
+  
+  const Component = VIEW_COMPONENTS[activeView] || Focus;
+
+  return <Component onTaskSelect={taskHandler} />;
 }
+

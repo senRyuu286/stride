@@ -77,9 +77,7 @@ export function useSidebarWorkspace() {
 
   const openRenameWorkspaceModal = () => {
     closeDropdown();
-    if (!activeWorkspace) {
-      return;
-    }
+    if (!activeWorkspace) return;
     setInputValue(activeWorkspace.name);
     setModalState("rename");
   };
@@ -94,11 +92,14 @@ export function useSidebarWorkspace() {
   };
 
   const submitWorkspaceAction = () => {
-    if (modalState === "create" && inputValue.trim()) {
-      addWorkspace(inputValue.trim());
-    } else if (modalState === "rename" && inputValue.trim() && activeWorkspace) {
-      if (inputValue.trim() !== activeWorkspace.name) {
-        updateWorkspace(activeWorkspace.id, { name: inputValue.trim() });
+    const trimmedValue = inputValue.trim();
+    if (!trimmedValue) return;
+
+    if (modalState === "create") {
+      addWorkspace(trimmedValue);
+    } else if (modalState === "rename" && activeWorkspace) {
+      if (trimmedValue !== activeWorkspace.name) {
+        updateWorkspace(activeWorkspace.id, { name: trimmedValue });
       }
     }
 

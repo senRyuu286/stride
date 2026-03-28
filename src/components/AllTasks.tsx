@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Folder, Circle, CheckCircle2, Calendar, Flag, ListTodo } from "lucide-react";
-import { type Task } from "../context/TaskContext";
+import { type Task } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
 import { BRAIN_DUMP_CATEGORY, mergeTaskLists } from "../utils/taskHelpers";
 

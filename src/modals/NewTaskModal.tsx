@@ -1,4 +1,4 @@
-import { type PriorityLevel } from "../context/TaskContext";
+import { type PriorityLevel } from "../store/useTaskStore";
 import { useNewTaskModalForm } from "../hooks/useNewTaskModalForm";
 import type { NewTaskModalProps } from "../types/modals";
 import { BRAIN_DUMP_CATEGORY } from "../utils/taskHelpers";

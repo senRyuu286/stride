@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { type Task } from "../context/TaskContext";
+import { type Task } from "../store/useTaskStore"; 
 import { useTasks } from "./useTasks";
 import { formatFullDate, getWholeDaysLeft } from "../utils/dateHelpers";
 

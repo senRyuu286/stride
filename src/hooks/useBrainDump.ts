@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { type Subtask } from "../context/TaskContext";
+import { type Subtask } from "../store/useTaskStore";
 import { useTasks } from "./useTasks";
 import { BRAIN_DUMP_CATEGORY, createId, mergeTaskLists } from "../utils/taskHelpers";
 
