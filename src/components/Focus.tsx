@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { type Task } from '../context/TaskContext';
 import { useTasks } from '../hooks/useTasks';
-import { Zap } from "lucide-react";
+import { Zap, Plus, Filter } from "lucide-react";
 import { BRAIN_DUMP_CATEGORY } from '../utils/taskHelpers';
 
 export interface FocusProps {
@@ -51,7 +51,6 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     }
   }, [dailyTasks, setDailyTasks, setUpcomingTasks]);
 
-
   const workspaceDailySlots = useMemo(() => {
     const slots: (Task | null)[] = [null, null, null];
     const currentWsTasks = dailyTasks.filter(t => t && t.workspaceId === activeWorkspaceId) as Task[];
@@ -62,7 +61,6 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     return slots;
   }, [dailyTasks, activeWorkspaceId]);
 
-
   const categories = useMemo(() => {
     const workspaceTasks = upcomingTasks.filter(t => 
       t.workspaceId === activeWorkspaceId && 
@@ -72,7 +70,6 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     const uniqueCategories = Array.from(new Set(workspaceTasks.map(t => t.category).filter(Boolean)));
     return ['All', ...uniqueCategories];
   }, [upcomingTasks, activeWorkspaceId]);
-
 
   const filteredAndSortedUpcoming = useMemo(() => {
     let tasks = upcomingTasks.filter(t => 
@@ -103,7 +100,6 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     
     return tasks;
   }, [upcomingTasks, activeWorkspaceId, activeCategory, sortBy]);
-
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, task: Task) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -155,22 +151,34 @@ export default function Focus({ onTaskSelect }: FocusProps) {
     setUpcomingTasks(prev => [...prev, task]);
   };
 
+  const handleMoveToDaily = (e: React.MouseEvent, task: Task) => {
+    e.stopPropagation();
+    const currentWsTasks = dailyTasks.filter(t => t && t.workspaceId === activeWorkspaceId) as Task[];
+    if (currentWsTasks.length >= 3) return;
+
+    setUpcomingTasks(prev => prev.filter(t => t.id !== task.id));
+    const otherWsTasks = dailyTasks.filter(t => t && t.workspaceId !== activeWorkspaceId) as Task[];
+    setDailyTasks([...otherWsTasks, ...currentWsTasks, task]);
+  };
+
+  const isDailyFull = workspaceDailySlots.every(slot => slot !== null);
+
   return (
-    <div className="max-w-4xl mx-auto w-full px-6 py-10 md:px-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5">
-            <Zap size={26} />
+    <div className="max-w-4xl mx-auto w-full px-4 py-6 md:px-8 md:py-10">
+      <div className="mb-6 md:mb-8">
+        <div className="flex items-center gap-3 md:gap-4 mb-2">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5">
+            <Zap size={22} className="md:w-6.5 md:h-6.5" />
           </div>
-          <h1 className="text-3xl font-bold">Focus</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Focus</h1>
         </div>
-        <p className="text-base-content/60 mt-2">
+        <p className="text-sm md:text-base text-base-content/60 mt-2">
           Tackle your most important tasks for the day.
         </p>
       </div>
 
-      <section className="mb-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section className="mb-10 md:mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           {workspaceDailySlots.map((task, index) => (
             <div 
               key={index}
@@ -183,25 +191,27 @@ export default function Focus({ onTaskSelect }: FocusProps) {
                 <div className="card h-full bg-base-200/50 border-2 border-primary/20 shadow-sm hover:border-primary">
                   <button 
                     onClick={(e) => handleRemoveFromDaily(e, task)}
-                    className="btn btn-xs btn-circle btn-ghost absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-base-300"
+                    className="btn btn-xs btn-circle btn-ghost absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10 hover:bg-base-300"
                     aria-label="Remove from Daily 3"
+                    title="Remove from Daily Focus"
                   >
                     ✕
                   </button>
 
-                  <div className="card-body p-5 flex flex-col justify-center">
+                  <div className="card-body p-4 md:p-5 flex flex-col justify-center min-w-0">
                     {(task.tags?.[0] || task.priority === 'High') && (
-                       <div className="badge badge-error gap-1 mb-2 font-medium text-[10px] uppercase tracking-wider w-max">
+                       <div className="badge badge-error gap-1 mb-2 font-medium text-[10px] uppercase tracking-wider">
                          {task.tags?.[0] || 'HIGH PRIORITY'}
                        </div>
                     )}
-                    <h4 className="font-bold text-lg leading-tight pr-4">{task.title}</h4>
-                    <p className="text-sm text-base-content/60 mt-1">{task.category}</p>
+                    <h4 className="font-bold text-base md:text-lg leading-tight pr-6 wrap-break-word">{task.title}</h4>
+                    <p className="text-xs md:text-sm text-base-content/60 mt-1 truncate">{task.category}</p>
                   </div>
                 </div>
               ) : (
-                <div className="h-32 rounded-xl border-2 border-dashed border-base-content/10 flex items-center justify-center text-base-content/40 text-sm font-medium hover:bg-base-200/50 hover:text-base-content/70 hover:border-base-content/30 cursor-pointer">
-                  Drag Task Here
+                <div className="h-24 md:h-32 rounded-xl border-2 border-dashed border-base-content/10 flex items-center justify-center text-base-content/40 text-sm font-medium hover:bg-base-200/50 hover:text-base-content/70 hover:border-base-content/30 cursor-pointer">
+                  <span className="hidden md:inline">Drag Task Here</span>
+                  <span className="md:hidden">Empty Slot</span>
                 </div>
               )}
             </div>
@@ -210,26 +220,62 @@ export default function Focus({ onTaskSelect }: FocusProps) {
       </section>
 
       <section>
-        <div className="flex justify-between items-end mb-4">
-          <h3 className="text-sm font-semibold text-base-content/50 uppercase tracking-widest">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="text-sm font-semibold text-base-content/50 uppercase tracking-widest shrink-0">
             Pending Tasks
           </h3>
-          <div className="flex gap-2">
+          
+          <div className="hidden md:flex items-center gap-2">
             <select 
-              className="select select-bordered select-sm bg-base-200/50"
+              className="select select-bordered select-sm bg-base-200/50 min-w-30"
               value={activeCategory}
               onChange={(e) => setActiveCategory(e.target.value)}
             >
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <select 
-              className="select select-bordered select-sm bg-base-200/50"
+              className="select select-bordered select-sm bg-base-200/50 min-w-35"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
             >
               <option value="Date">Sort by Date</option>
               <option value="Priority">Sort by Priority</option>
             </select>
+          </div>
+          <div className="dropdown dropdown-end md:hidden">
+            <div tabIndex={0} role="button" className="btn btn-sm btn-ghost bg-base-200 border-base-content/10 gap-2">
+              <Filter size={14} />
+              <span className="text-xs font-medium">Filter</span>
+            </div>
+            <div tabIndex={0} className="dropdown-content z-50 p-4 shadow-xl bg-base-100 rounded-box w-64 border border-base-content/10 mt-2 flex flex-col gap-3">
+              <div className="form-control">
+                <label className="label py-1"><span className="label-text text-xs font-bold">Category</span></label>
+                <select 
+                  className="select select-bordered select-sm w-full bg-base-200/50"
+                  value={activeCategory}
+                  onChange={(e) => {
+                    setActiveCategory(e.target.value);
+                    (document.activeElement as HTMLElement)?.blur(); 
+                  }}
+                >
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="form-control">
+                <label className="label py-1"><span className="label-text text-xs font-bold">Sort by</span></label>
+                <select 
+                  className="select select-bordered select-sm w-full bg-base-200/50"
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value as SortOption);
+                    (document.activeElement as HTMLElement)?.blur();
+                  }}
+                >
+                  <option value="Date">Sort by Date</option>
+                  <option value="Priority">Sort by Priority</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -248,9 +294,9 @@ export default function Focus({ onTaskSelect }: FocusProps) {
                   draggable
                   onDragStart={(e) => handleDragStart(e, task)}
                   onClick={() => onTaskSelect(task)}
-                  className="flex items-center justify-between p-4 rounded-xl bg-base-200/30 border border-base-content/5 hover:bg-base-200/80 hover:border-base-content/10 transition-all cursor-grab active:cursor-grabbing group"
+                  className="flex items-center justify-between p-3 md:p-4 rounded-xl bg-base-200/30 border border-base-content/5 hover:bg-base-200/80 hover:border-base-content/10 transition-all cursor-grab active:cursor-grabbing group"
                 >
-                  <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1 pr-2">
                     <input 
                       type="checkbox" 
                       className="checkbox checkbox-primary checkbox-sm rounded-md shrink-0" 
@@ -274,17 +320,29 @@ export default function Focus({ onTaskSelect }: FocusProps) {
                     </div>
                   </div>
 
-                  <div className={`badge badge-ghost text-[10px] uppercase tracking-wider font-medium shrink-0 ${
-                    daysLeft !== null && daysLeft <= 1 ? 'badge-error badge-outline' : 'opacity-70'
-                  }`}>
-                    {daysLeft === null 
-                      ? 'No Date' 
-                      : daysLeft === 0 
-                        ? 'Today' 
-                        : daysLeft < 0 
-                          ? 'Overdue' 
-                          : `In ${daysLeft}d`
-                    }
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!isDailyFull && (
+                      <button 
+                        onClick={(e) => handleMoveToDaily(e, task)}
+                        className="btn btn-xs btn-circle btn-ghost bg-base-200 text-base-content/60 hover:text-primary md:hidden"
+                        title="Add to Daily Focus"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    )}
+                    
+                    <div className={`badge badge-ghost text-[10px] uppercase tracking-wider font-medium shrink-0 ${
+                      daysLeft !== null && daysLeft <= 1 ? 'badge-error badge-outline' : 'opacity-70'
+                    }`}>
+                      {daysLeft === null 
+                        ? 'No Date' 
+                        : daysLeft === 0 
+                          ? 'Today' 
+                          : daysLeft < 0 
+                            ? 'Overdue' 
+                            : `In ${daysLeft}d`
+                      }
+                    </div>
                   </div>
                 </div>
               );

@@ -25,9 +25,12 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
   }, [syncNotesFromTask]);
 
   return (
-    <aside className="w-full md:w-80 lg:w-100 bg-base-100/95 backdrop-blur-2xl border-l border-base-content/10 flex flex-col z-50 absolute right-0 inset-y-0 md:relative md:h-full shrink-0 shadow-2xl max-w-full overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-transparent">
+      <div className="w-full flex justify-center py-3 lg:hidden shrink-0 bg-base-100 border-b border-base-content/5">
+        <div className="w-12 h-1.5 bg-base-content/20 rounded-full" />
+      </div>
 
-      <div className="h-14 flex justify-between items-center px-6 border-b border-base-content/10 shrink-0 w-full">
+      <div className="h-14 md:h-16 flex justify-between items-center px-4 lg:px-6 border-b border-base-content/10 shrink-0 w-full">
         <div className="flex items-center gap-2 min-w-0">
           <span 
             className={`w-2 h-2 rounded-full shrink-0 ${
@@ -75,10 +78,10 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
         </div>
       </div>
 
-      <div className="p-6 flex-1 overflow-y-auto overflow-x-hidden space-y-8 w-full">
+      <div className="p-4 lg:p-6 flex-1 overflow-y-auto overflow-x-hidden space-y-6 lg:space-y-8 w-full">
 
         <div className="w-full min-w-0 flex flex-col">
-          <h2 className={`text-3xl font-bold mb-4 wrap-break-word whitespace-pre-wrap ${activeTask.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
+          <h2 className={`text-2xl lg:text-3xl font-bold mb-4 wrap-break-word whitespace-pre-wrap ${activeTask.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
             {activeTask.title}
           </h2>
           
@@ -116,7 +119,7 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
         <div className="space-y-3 w-full min-w-0">
           <h3 className="text-sm font-bold text-base-content/50 uppercase tracking-wider">Notes & Details</h3>
           <textarea 
-            className="textarea textarea-bordered bg-base-100 text-base h-40 w-full text-base-content/90 leading-relaxed focus:outline-primary border-base-content/10 resize-none overflow-x-hidden transition-colors" 
+            className="textarea textarea-bordered bg-base-100 text-base h-32 lg:h-40 w-full text-base-content/90 leading-relaxed focus:outline-primary border-base-content/10 resize-none overflow-x-hidden transition-colors" 
             placeholder="Add rubrics, links, or specific thoughts here..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -145,8 +148,7 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
           </div>
         )}
       </div>
-
-      <div className="p-5 border-t border-base-content/10 bg-base-100/80 backdrop-blur-md shrink-0 w-full">
+      <div className="p-4 pb-8 lg:p-5 border-t border-base-content/10 bg-base-100/80 backdrop-blur-md shrink-0 w-full">
         <button 
           className={`btn w-full shadow-sm font-semibold text-base transition-all ${
             activeTask.status === 'completed' 
@@ -165,6 +167,6 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
         onCancel={() => setIsDeleteTaskModalOpen(false)}
         onConfirm={deleteCurrentTask}
       />
-    </aside>
+    </div>
   );
 }

@@ -38,7 +38,7 @@ function TimelineSection({
   if (tasks.length === 0) return null;
 
   return (
-    <div className="relative pl-12 pb-10">
+    <div className="relative pl-10 md:pl-12 pb-8 md:pb-10">
       {!isLast && (
         <div className="absolute left-4 top-8 -bottom-2.5 w-px bg-base-content/10"></div>
       )}
@@ -47,17 +47,17 @@ function TimelineSection({
         <Icon size={14} className={colorClass.replace('border-', 'text-')} />
       </div>
 
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-3 h-8">
+      <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2 md:gap-3 h-8">
         {title}
-        <span className="badge badge-sm badge-ghost opacity-60">{tasks.length}</span>
+        <span className="badge badge-sm badge-ghost opacity-60 text-xs">{tasks.length}</span>
       </h2>
 
-      <div className="space-y-3">
+      <div className="space-y-2 md:space-y-3">
         {tasks.map((task: Task) => (
           <div 
             key={task.id}
             onClick={() => onTaskSelect(task)}
-            className={`group flex items-center gap-3 p-3 bg-base-100 rounded-xl border border-base-content/10 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer ${
+            className={`group flex items-center gap-2 md:gap-3 p-3 bg-base-100 rounded-xl border border-base-content/10 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer ${
               task.status === 'completed' ? 'opacity-60' : ''
             }`}
           >
@@ -66,39 +66,41 @@ function TimelineSection({
                 e.stopPropagation();
                 onToggleTaskCompletion(task.id);
               }}
-              className="text-base-content/30 hover:text-success transition-colors shrink-0"
+              className="text-base-content/30 hover:text-success transition-colors shrink-0 p-1 md:p-0"
+              aria-label={task.status === 'completed' ? "Mark as incomplete" : "Mark as complete"}
             >
               {task.status === 'completed' ? (
-                <CheckCircle2 size={20} className="text-success" />
+                <CheckCircle2 size={18} className="text-success md:w-5 md:h-5" />
               ) : (
-                <Circle size={20} />
+                <Circle size={18} className="md:w-5 md:h-5" />
               )}
             </button>
 
-            <div className="flex-1 min-w-0">
-              <h4 className={`font-medium truncate ${task.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
+            <div className="flex-1 min-w-0 pr-1 md:pr-2">
+              <h4 className={`font-medium text-sm md:text-base truncate ${task.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
                 {task.title}
               </h4>
               {task.category && (
-                <p className="text-xs opacity-60 truncate mt-0.5">{task.category}</p>
+                <p className="text-[10px] md:text-xs opacity-60 truncate mt-0.5">{task.category}</p>
               )}
             </div>
-
-            <div className="flex items-center gap-3 shrink-0 text-xs font-medium">
+            <div className="flex flex-col items-end sm:flex-row sm:items-center gap-1 sm:gap-3 shrink-0 text-[10px] md:text-xs font-medium">
               {task.priority !== 'None' && (
                 <div className="flex items-center gap-1 opacity-70">
-                  <Flag size={14} className={
+                  <Flag size={12} className={`md:w-3.5 md:h-3.5 ${
                     task.priority === 'High' ? 'text-error' : 
                     task.priority === 'Medium' ? 'text-warning' : 
                     'text-info'
-                  } />
+                  }`} />
+                  <span className="hidden sm:inline">{task.priority}</span>
                 </div>
               )}
               
-              <div className="flex items-center gap-1.5 bg-base-200/50 px-2.5 py-1 rounded-md">
-                <Clock size={12} className="opacity-50" />
+              <div className="flex items-center gap-1.5 bg-base-200/50 px-2 md:px-2.5 py-1 rounded-md text-right">
+                <Clock size={10} className="md:w-3 md:h-3 opacity-50 shrink-0 hidden sm:block" />
                 <span className={title === 'Overdue' ? 'text-error font-semibold' : 'opacity-70'}>
-                  {title === 'Upcoming' ? `${formatTimelineDate(task.dueDate!)} - ` : ''}
+                  {title === 'Upcoming' ? `${formatTimelineDate(task.dueDate!)} ` : ''}
+                  <span className="hidden sm:inline text-base-content/30">{title === 'Upcoming' ? '- ' : ''}</span>
                   {formatTimelineTime(task.dueDate!)}
                 </span>
               </div>
@@ -164,25 +166,24 @@ export default function Timeline({ onTaskSelect }: TimelineProps) {
   const hasAnyTasks = Object.values(groupedTasks).some(group => group.length > 0);
 
   return (
-    <div className="max-w-4xl mx-auto w-full px-6 py-10 md:px-8 h-full flex flex-col">
-      <div className="mb-10">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5">
-            <CalendarDays size={26} />
+    <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 md:px-8 py-8 md:py-10">
+      <div className="mb-8 md:mb-10">
+        <div className="flex items-center gap-3 md:gap-4 mb-2">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5 shrink-0">
+            <CalendarDays size={24} className="md:w-6.5 md:h-6.5" />
           </div>
-          <h1 className="text-3xl font-bold">Timeline</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Timeline</h1>
         </div>
-        <p className="text-base-content/60 mt-2">
+        <p className="text-sm md:text-base text-base-content/60 mt-2">
           Your schedule and upcoming deadlines at a glance.
         </p>
       </div>
-
-      <div className="flex-1 overflow-y-auto pr-2 pb-12">
+      <div className="pb-12">
         {!hasAnyTasks ? (
           <div className="flex flex-col items-center justify-center h-48 opacity-40 text-center border-2 border-dashed border-base-content/10 rounded-2xl">
             <CalendarIcon size={48} className="mb-4 opacity-50" />
-            <p>No scheduled tasks found.</p>
-            <p className="text-sm mt-1">Add a due date to a task to see it here!</p>
+            <p className="text-sm md:text-base">No scheduled tasks found.</p>
+            <p className="text-xs md:text-sm mt-1">Add a due date to a task to see it here!</p>
           </div>
         ) : (
           <div className="pt-2">

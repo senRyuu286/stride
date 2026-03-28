@@ -29,14 +29,27 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
   } = useNewTaskModalForm(taskToEdit);
 
   return (
-    <div className="modal modal-open bg-black/40 backdrop-blur-sm z-50">
-      <div className="modal-box bg-base-100 border border-base-content/10 shadow-2xl max-w-2xl">
-        <h3 className="font-bold text-xl mb-6">
-          {taskToEdit ? "Process Task" : "Create New Task"}
-        </h3>
-        <div className="space-y-4">
+    <div className="modal modal-open modal-bottom sm:modal-middle bg-neutral-900/40 backdrop-blur-sm z-50 sm:p-4">
+      <div 
+        className="fixed inset-0" 
+        onClick={onClose}
+        aria-hidden="true"
+      ></div>
+
+      <div className="modal-box relative bg-base-100 border border-base-content/10 shadow-2xl rounded-t-3xl sm:rounded-2xl p-0 w-full max-w-2xl max-h-[90vh] flex flex-col z-10 animate-slide-up sm:animate-pop-in overflow-hidden">
+
+        <div className="w-full flex justify-center absolute top-3 left-0 sm:hidden z-20 pointer-events-none">
+          <div className="w-12 h-1.5 bg-base-content/20 rounded-full" />
+        </div>
+
+        <div className="px-6 pt-8 pb-4 sm:pt-6 sm:pb-4 border-b border-base-content/10 shrink-0 bg-base-100 z-10">
+          <h3 className="font-bold text-lg sm:text-xl text-base-content m-0">
+            {taskToEdit ? "Process Task" : "Create New Task"}
+          </h3>
+        </div>
+        <div className="p-6 overflow-y-auto space-y-5">
           <div className="form-control">
-            <label className="label">
+            <label className="label pt-0">
               <span className="label-text font-medium">Task Name*</span>
             </label>
             <input
@@ -48,7 +61,8 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               placeholder="What needs to be done?"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Project / Category</span>
@@ -93,7 +107,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                     placeholder="New project name..."
                   />
                   <button
-                    className="btn btn-ghost px-2"
+                    className="btn btn-ghost px-2 shrink-0"
                     onClick={() => {
                       setIsAddingNewCategory(false);
                       setCategory(existingCategories[0] || BRAIN_DUMP_CATEGORY);
@@ -104,6 +118,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                 </div>
               )}
             </div>
+            
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Priority</span>
@@ -120,7 +135,8 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Due Date & Time</span>
@@ -132,6 +148,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                 onChange={(event) => setDueDate(event.target.value)}
               />
             </div>
+            
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Tags</span>
@@ -145,6 +162,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               />
             </div>
           </div>
+          
           <div className="form-control">
             <label className="label">
               <span className="label-text font-medium">Subtasks</span>
@@ -152,26 +170,26 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
             <div className="flex gap-2 mb-2">
               <input
                 type="text"
-                className="input input-bordered input-sm flex-1 bg-base-200/50"
+                className="input input-bordered flex-1 bg-base-200/50"
                 placeholder="Add a step..."
                 value={subtaskInput}
                 onChange={(event) => setSubtaskInput(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && handleAddPendingSubtask()}
               />
-              <button className="btn btn-sm btn-secondary" onClick={handleAddPendingSubtask}>
+              <button className="btn btn-secondary shrink-0" onClick={handleAddPendingSubtask}>
                 Add
               </button>
             </div>
             {pendingSubtasks.length > 0 && (
-              <ul className="space-y-1 mt-1">
+              <ul className="space-y-2 mt-1">
                 {pendingSubtasks.map((subtask, index) => (
                   <li
                     key={index}
-                    className="flex justify-between items-center text-sm bg-base-200/30 px-3 py-1.5 rounded-md border border-base-content/5"
+                    className="flex justify-between items-center text-sm bg-base-200/30 px-3 py-2 rounded-md border border-base-content/5"
                   >
-                    <span>{subtask}</span>
+                    <span className="truncate pr-2">{subtask}</span>
                     <button
-                      className="btn btn-ghost btn-xs text-error opacity-70"
+                      className="btn btn-ghost btn-xs text-error opacity-70 shrink-0"
                       onClick={() => handleRemovePendingSubtask(index)}
                     >
                       X
@@ -181,23 +199,35 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               </ul>
             )}
           </div>
-          <div className="form-control">
+          
+          <div className="form-control pb-4">
             <label className="label">
               <span className="label-text font-medium">Notes & Details</span>
             </label>
             <textarea
-              className="textarea textarea-bordered w-full bg-base-200/50 h-24"
+              className="textarea textarea-bordered w-full bg-base-200/50 h-24 sm:h-32"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Add notes here..."
             />
           </div>
         </div>
-        <div className="modal-action mt-6 pt-4 border-t border-base-content/10">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={() => saveTask(onClose)} disabled={!title.trim()}>
-            {taskToEdit ? "Save Task" : "Create Task"}
-          </button>
+        <div className="p-4 sm:px-6 sm:py-4 border-t border-base-content/10 shrink-0 bg-base-100 z-10 pb-safe">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 w-full">
+            <button 
+              className="btn btn-ghost w-full sm:w-auto order-2 sm:order-1 rounded-xl" 
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn btn-primary w-full sm:w-auto order-1 sm:order-2 rounded-xl" 
+              onClick={() => saveTask(onClose)} 
+              disabled={!title.trim()}
+            >
+              {taskToEdit ? "Save Task" : "Create Task"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

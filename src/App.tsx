@@ -4,14 +4,15 @@ import Dashboard from './pages/Dashboard';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
+  
   const [showOnboarding, setShowOnboarding] = useState(
-    () => !localStorage.getItem('hasSeenOnboarding'),
+    () => !localStorage.getItem('hasSeenOnboarding')
   );
 
   useEffect(() => {
     const loadingTimeout = window.setTimeout(() => {
       setIsLoading(false);
-    }, 0);
+    }, 100);
 
     return () => {
       window.clearTimeout(loadingTimeout);
@@ -25,20 +26,20 @@ const App = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-base-200">
+      <div className="flex h-screen w-screen items-center justify-center bg-base-100">
         <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
   }
 
   return (
-    <main>
+    <>
       {showOnboarding ? (
         <Onboarding onFinish={handleFinishOnboarding} />
       ) : (
         <Dashboard />
       )}
-    </main>
+    </>
   );
 };
 
