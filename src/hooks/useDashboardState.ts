@@ -8,6 +8,7 @@ export function useDashboardState() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [isDeleteAllConfirmOpen, setIsDeleteAllConfirmOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem("stride-theme") || "system");
@@ -28,6 +29,9 @@ export function useDashboardState() {
 
   const openSettings = () => setIsSettingsOpen(true);
   const closeSettings = () => setIsSettingsOpen(false);
+
+  const openBackup = () => setIsBackupOpen(true);
+  const closeBackup = () => setIsBackupOpen(false);
 
   const openNewTaskModal = () => {
     setTaskToEdit(null);
@@ -78,12 +82,15 @@ export function useDashboardState() {
     isSettingsOpen,
     isRightSidebarOpen,
     isNewTaskModalOpen,
+    isBackupOpen,
     taskToEdit,
     isDeleteAllConfirmOpen,
     theme,
     setTheme,
     openSettings,
     closeSettings,
+    openBackup,
+    closeBackup,
     openNewTaskModal,
     editTask,
     closeNewTaskModal,

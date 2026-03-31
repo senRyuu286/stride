@@ -1,6 +1,4 @@
 
-
-import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { Topbar } from "../components/Topbar";
 import { TaskDetails } from "../components/TaskDetails";
@@ -19,12 +17,15 @@ export default function Dashboard() {
     isSettingsOpen,
     isRightSidebarOpen,
     isNewTaskModalOpen,
+    isBackupOpen,
     taskToEdit,
     isDeleteAllConfirmOpen,
     theme,
     setTheme,
     openSettings,
     closeSettings,
+    openBackup,
+    closeBackup,
     openNewTaskModal,
     editTask,
     closeNewTaskModal,
@@ -36,11 +37,7 @@ export default function Dashboard() {
     executeDataWipe,
   } = useDashboardState();
 
-const [isBackupOpen, setIsBackupOpen] = useState(false);
-  const openBackup = () => setIsBackupOpen(true);
-  const closeBackup = () => setIsBackupOpen(false);
-
-return (
+  return (
     <div className="drawer lg:drawer-open h-screen w-screen overflow-hidden bg-base-100 text-base-content font-sans">
       <input id="sidebar-drawer" type="checkbox" className="drawer-toggle" />
 

@@ -1,13 +1,8 @@
-import React, { useMemo, useState } from "react";
-import { type PriorityLevel, useTaskStore } from "../store/useTaskStore";
+import { type PriorityLevel } from "../store/useTaskStore";
 import { useNewTaskModalForm } from "../hooks/useNewTaskModalForm";
+import { useNewTaskMeta } from "../hooks/useNewTaskMeta";
 import type { NewTaskModalProps } from "../types/modals";
 import { BRAIN_DUMP_CATEGORY } from "../utils/taskHelpers";
-
-const formatToLocalDatetime = (d: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
 
 export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
   const {
@@ -34,76 +29,15 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
     saveTask,
   } = useNewTaskModalForm(taskToEdit);
 
-const upcomingTasks = useTaskStore((state) => state.upcomingTasks);
-  const dailyTasks = useTaskStore((state) => state.dailyTasks);
-
-  const allTasks = useMemo(() => {
-    return [
-      ...(upcomingTasks || []),
-      ...(dailyTasks || []).filter((t): t is NonNullable<typeof t> => t !== null),
-    ];
-  }, [upcomingTasks, dailyTasks]);
-  
-  const [customTags, setCustomTags] = useState<string[]>([]);
-  const [newTagInput, setNewTagInput] = useState("");
-
-  const availableTags = useMemo(() => {
-    const predefined = ["Work", "Personal", "Urgent", "Study", "Health", "Finance", "Errands", "Project"];
-    const existing = allTasks.flatMap((t) => t?.tags || []);
-    return Array.from(new Set([...predefined, ...existing, ...customTags])).filter(Boolean);
-  }, [allTasks, customTags]);
-
-const selectedTagsList = useMemo(() => {
-    if (!tagsInput || typeof tagsInput !== "string") return [];
-    return tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
-  }, [tagsInput]);
-
-  const toggleTag = (tag: string) => {
-    if (selectedTagsList.includes(tag)) {
-      setTagsInput(selectedTagsList.filter((t) => t !== tag).join(", "));
-    } else {
-      setTagsInput([...selectedTagsList, tag].join(", "));
-    }
-  };
-
-  const addCustomTag = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.preventDefault();
-    const t = newTagInput.trim();
-    if (!t) return;
-    if (!customTags.includes(t)) {
-      setCustomTags((prev) => [...prev, t]);
-    }
-    if (!selectedTagsList.includes(t)) {
-      setTagsInput([...selectedTagsList, t].join(", "));
-    }
-    setNewTagInput("");
-  };
-
-const quickDates = useMemo(() => {
-    const now = new Date();
-
-    const today = new Date(now);
-    today.setHours(23, 59, 0, 0);
-
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    tomorrow.setHours(23, 59, 0, 0);
-
-    const thisWeek = new Date(now);
-    thisWeek.setDate(now.getDate() + (7 - now.getDay()));
-    thisWeek.setHours(23, 59, 0, 0);
-
-    const nextWeek = new Date(thisWeek);
-    nextWeek.setDate(thisWeek.getDate() + 7);
-    nextWeek.setHours(23, 59, 0, 0);
-
-    return [
-      { label: "Today", value: formatToLocalDatetime(today) },
-      { label: "Tomorrow", value: formatToLocalDatetime(tomorrow) },
-      { label: "This Week", value: formatToLocalDatetime(thisWeek) },
-      { label: "Next Week", value: formatToLocalDatetime(nextWeek) },
-    ];
-  }, []);
+  const {
+    newTagInput,
+    setNewTagInput,
+    selectedTagsList,
+    availableTags,
+    toggleTag,
+    addCustomTag,
+    quickDates,
+  } = useNewTaskMeta(tagsInput, setTagsInput);
 
   return (
     <div className="modal modal-open modal-bottom sm:modal-middle bg-neutral-900/40 backdrop-blur-sm z-50 sm:p-4">

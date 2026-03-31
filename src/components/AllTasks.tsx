@@ -168,14 +168,14 @@ let matchesDate = true;
           </div>
           <details
             ref={dropdownRef}
-            className="dropdown dropdown-end md:hidden"
+            className="dropdown dropdown-end md:hidden ml-auto"
           >
             <summary className="btn btn-sm btn-ghost bg-base-200 border-base-content/10 gap-2">
               <Filter size={14} />
               <span className="text-xs font-medium">Filter</span>
               {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-primary ml-1" />}
             </summary>
-            <div className="dropdown-content z-50 p-4 shadow-xl bg-base-100 rounded-box w-64 border border-base-content/10 mt-2 flex flex-col gap-3">
+            <div className="dropdown-content right-0 left-auto z-50 p-4 shadow-xl bg-base-100 rounded-box w-64 border border-base-content/10 mt-2 flex flex-col gap-3">
               <div className="form-control">
                 <label className="label py-1">
                   <span className="label-text text-xs font-bold">Priority</span>
@@ -298,7 +298,7 @@ let matchesDate = true;
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 md:gap-3 shrink-0 text-[10px] md:text-xs opacity-60">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 md:gap-3 shrink-0 text-[10px] md:text-xs opacity-60 max-w-[45%] sm:max-w-none">
                       {task.subtasks && task.subtasks.length > 0 && (
                         <div className="flex items-center gap-1" title={`${task.subtasks.length} subtasks`}>
                           <ListChecks size={12} className="md:w-3.5 md:h-3.5" />

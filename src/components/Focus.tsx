@@ -3,20 +3,13 @@ import { type Task } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
 import { Zap, Plus, Filter, ListChecks } from "lucide-react";
 import { BRAIN_DUMP_CATEGORY } from "../utils/taskHelpers";
+import { getWholeDaysLeft } from "../utils/dateHelpers";
 
 export interface FocusProps {
   onTaskSelect: (task: Task) => void;
 }
 
 type SortOption = "Date" | "Priority";
-
-function getDaysLeft(dueDateStr: string | null): number | null {
-  if (!dueDateStr) return null;
-  const due = new Date(dueDateStr).getTime();
-  const now = new Date().getTime();
-  const diffTime = due - now;
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
 
 export default function Focus({ onTaskSelect }: FocusProps) {
   const {
@@ -358,7 +351,7 @@ export default function Focus({ onTaskSelect }: FocusProps) {
             </div>
           ) : (
             filteredAndSortedUpcoming.map((task) => {
-              const daysLeft = getDaysLeft(task.dueDate);
+              const daysLeft = getWholeDaysLeft(task.dueDate);
 
               return (
                 <div
@@ -380,7 +373,7 @@ export default function Focus({ onTaskSelect }: FocusProps) {
                       <h4 className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
                         {task.title}
                       </h4>
-                      <span className="text-xs text-base-content/50 mt-1 flex items-center gap-1">
+                      <span className="text-xs text-base-content/50 mt-1 flex flex-wrap sm:flex-nowrap items-center gap-1">
                         <span
                           className={`w-2 h-2 rounded-full inline-block shrink-0 ${
                             task.priority === "High"
