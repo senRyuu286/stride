@@ -1,12 +1,16 @@
-import { useMemo } from "react";
-import { Folder, Circle, CheckCircle2, Calendar, Flag, ListTodo } from "lucide-react";
-import { type Task } from "../store/useTaskStore";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { Folder, Circle, CheckCircle2, Calendar, Flag, ListTodo, ListChecks, Filter, X } from "lucide-react";
+import { type Task, type PriorityLevel } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
 import { BRAIN_DUMP_CATEGORY, mergeTaskLists } from "../utils/taskHelpers";
+import { getWholeDaysLeft, isWithinNextSevenDays } from "../utils/dateHelpers";
 
 export interface AllTasksProps {
   onTaskSelect: (task: Task) => void;
 }
+
+type DateFilterType = "All" | "Overdue" | "Due Today" | "This Week" | "No Due Date";
+type PriorityFilterType = PriorityLevel | "All";
 
 export default function AllTasks({ onTaskSelect }: AllTasksProps) {
   const { 
@@ -16,11 +20,54 @@ export default function AllTasks({ onTaskSelect }: AllTasksProps) {
     toggleTaskCompletion 
   } = useTasks();
 
+const [priorityFilter, setPriorityFilter] = useState<PriorityFilterType>("All");
+  const [dateFilter, setDateFilter] = useState<DateFilterType>("All");
+  const dropdownRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (
+        dropdownRef.current &&
+        dropdownRef.current.hasAttribute("open") &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        dropdownRef.current.removeAttribute("open");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
   const workspaceTasks = useMemo(() => {
-    return mergeTaskLists(upcomingTasks, dailyTasks).filter(
-      (t) => t.workspaceId === activeWorkspaceId && t.category !== BRAIN_DUMP_CATEGORY
-    );
-  }, [upcomingTasks, dailyTasks, activeWorkspaceId]);
+    return mergeTaskLists(upcomingTasks, dailyTasks).filter((t) => {
+      
+      const isInWorkspace = t.workspaceId === activeWorkspaceId && t.category !== BRAIN_DUMP_CATEGORY;
+      if (!isInWorkspace) return false;
+
+const matchesPriority = priorityFilter === "All" || t.priority === priorityFilter;
+
+let matchesDate = true;
+      const daysLeft = getWholeDaysLeft(t.dueDate);
+
+      if (dateFilter === "Overdue") {
+        matchesDate = daysLeft !== null && daysLeft < 0;
+      } else if (dateFilter === "Due Today") {
+        matchesDate = daysLeft === 0;
+      } else if (dateFilter === "This Week") {
+        matchesDate = isWithinNextSevenDays(t.dueDate);
+      } else if (dateFilter === "No Due Date") {
+        matchesDate = t.dueDate === null;
+      }
+
+      return matchesPriority && matchesDate;
+    });
+  }, [upcomingTasks, dailyTasks, activeWorkspaceId, priorityFilter, dateFilter]);
 
   const groupedTasks = useMemo(() => {
     const groups: Record<string, Task[]> = {};
@@ -49,24 +96,161 @@ export default function AllTasks({ onTaskSelect }: AllTasksProps) {
     });
   };
 
+  const formatCompletionDate = (isoString?: string | null) => {
+    if (!isoString) return null;
+    return `Completed ${new Date(isoString).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })} at ${new Date(isoString).toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit'
+    })}`;
+  };
+
+  const resetFilters = () => {
+    setPriorityFilter("All");
+    setDateFilter("All");
+  };
+
+  const hasActiveFilters = priorityFilter !== "All" || dateFilter !== "All";
+
   return (
     <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 md:px-8 py-8 md:py-10">
-      <div className="mb-6 md:mb-8">
-        <div className="flex items-center gap-3 md:gap-4 mb-2">
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5 shrink-0">
-            <ListTodo size={24} className="md:w-6.5 md:h-6.5" />
+      
+      <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5 shrink-0">
+              <ListTodo size={24} className="md:w-7 md:h-7" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold">All Tasks</h1>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold">All Tasks</h1>
+          <p className="text-sm md:text-base text-base-content/60 ml-1">
+            A bird's-eye view of everything across all your projects.
+          </p>
         </div>
-        <p className="text-sm md:text-base text-base-content/60 mt-2">
-          A bird's-eye view of everything across all your projects.
-        </p>
+
+        <div className="flex flex-wrap gap-2 items-center">
+          {hasActiveFilters && (
+            <button 
+              onClick={resetFilters}
+              className="btn btn-ghost btn-sm text-error hidden md:flex"
+              title="Clear Filters"
+            >
+              <X size={16} /> Clear
+            </button>
+          )}
+          <div className="hidden md:flex items-center gap-2">
+            <select 
+              className="select select-bordered select-sm bg-base-200/50 min-w-35"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value as PriorityFilterType)}
+            >
+              <option value="All" className="bg-base-100">All Priorities</option>
+              <option value="High" className="bg-base-100">Priority: High</option>
+              <option value="Medium" className="bg-base-100">Priority: Medium</option>
+              <option value="Low" className="bg-base-100">Priority: Low</option>
+              <option value="None" className="bg-base-100">No Priority</option>
+            </select>
+
+            <select 
+              className="select select-bordered select-sm bg-base-200/50 min-w-35"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value as DateFilterType)}
+            >
+              <option value="All" className="bg-base-100">All Dates</option>
+              <option value="Overdue" className="bg-base-100">Overdue</option>
+              <option value="Due Today" className="bg-base-100">Due Today</option>
+              <option value="This Week" className="bg-base-100">This Week</option>
+              <option value="No Due Date" className="bg-base-100">No Due Date</option>
+            </select>
+          </div>
+          <details
+            ref={dropdownRef}
+            className="dropdown dropdown-end md:hidden"
+          >
+            <summary className="btn btn-sm btn-ghost bg-base-200 border-base-content/10 gap-2">
+              <Filter size={14} />
+              <span className="text-xs font-medium">Filter</span>
+              {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-primary ml-1" />}
+            </summary>
+            <div className="dropdown-content z-50 p-4 shadow-xl bg-base-100 rounded-box w-64 border border-base-content/10 mt-2 flex flex-col gap-3">
+              <div className="form-control">
+                <label className="label py-1">
+                  <span className="label-text text-xs font-bold">Priority</span>
+                </label>
+                <select
+                  className="select select-bordered select-sm w-full bg-base-200/50"
+                  value={priorityFilter}
+                  onChange={(e) => {
+                    setPriorityFilter(e.target.value as PriorityFilterType);
+                    e.target.closest("details")?.removeAttribute("open");
+                  }}
+                >
+                  <option value="All" className="bg-base-100">All Priorities</option>
+                  <option value="High" className="bg-base-100">Priority: High</option>
+                  <option value="Medium" className="bg-base-100">Priority: Medium</option>
+                  <option value="Low" className="bg-base-100">Priority: Low</option>
+                  <option value="None" className="bg-base-100">No Priority</option>
+                </select>
+              </div>
+              <div className="form-control">
+                <label className="label py-1">
+                  <span className="label-text text-xs font-bold">Date</span>
+                </label>
+                <select
+                  className="select select-bordered select-sm w-full bg-base-200/50"
+                  value={dateFilter}
+                  onChange={(e) => {
+                    setDateFilter(e.target.value as DateFilterType);
+                    e.target.closest("details")?.removeAttribute("open");
+                  }}
+                >
+                  <option value="All" className="bg-base-100">All Dates</option>
+                  <option value="Overdue" className="bg-base-100">Overdue</option>
+                  <option value="Due Today" className="bg-base-100">Due Today</option>
+                  <option value="This Week" className="bg-base-100">This Week</option>
+                  <option value="No Due Date" className="bg-base-100">No Due Date</option>
+                </select>
+              </div>
+              
+              {hasActiveFilters && (
+                <button 
+                  onClick={(e) => {
+                    resetFilters();
+                    e.currentTarget.closest("details")?.removeAttribute("open");
+                  }}
+                  className="btn btn-sm btn-outline btn-error mt-2 w-full"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </details>
+        </div>
       </div>
+
       <div className="pb-12 space-y-6 md:space-y-8">
         {Object.keys(groupedTasks).length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 opacity-40 text-center border-2 border-dashed border-base-content/10 rounded-2xl">
-            <Folder size={48} className="mb-4 opacity-50" />
-            <p className="text-sm md:text-base">No active tasks found in this workspace.</p>
+          <div className="flex flex-col items-center justify-center h-64 opacity-40 text-center border-2 border-dashed border-base-content/10 rounded-2xl p-8">
+            {hasActiveFilters ? (
+               <>
+                 <Filter size={48} className="mb-4 opacity-50 text-warning" />
+                 <p className="text-sm md:text-base font-medium">No tasks match the selected filters.</p>
+                 <button 
+                   onClick={resetFilters} 
+                   className="btn btn-link btn-sm text-primary no-underline mt-2"
+                 >
+                   Clear all filters
+                 </button>
+               </>
+            ) : (
+              <>
+                <Folder size={48} className="mb-4 opacity-50" />
+                <p className="text-sm md:text-base">No active tasks found in this workspace.</p>
+              </>
+            )}
           </div>
         ) : (
           Object.entries(groupedTasks).map(([category, tasks]) => (
@@ -107,9 +291,21 @@ export default function AllTasks({ onTaskSelect }: AllTasksProps) {
                       <h4 className={`font-medium text-sm md:text-base truncate ${task.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
                         {task.title}
                       </h4>
+                      {task.status === 'completed' && task.completionDate && (
+                         <p className="text-[10px] md:text-xs text-base-content/50 mt-0.5 truncate">
+                           {formatCompletionDate(task.completionDate)}
+                         </p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-3 shrink-0 text-[10px] md:text-xs opacity-60">
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <div className="flex items-center gap-1" title={`${task.subtasks.length} subtasks`}>
+                          <ListChecks size={12} className="md:w-3.5 md:h-3.5" />
+                          <span>{task.subtasks.length}</span>
+                        </div>
+                      )}
+                      
                       {task.priority !== 'None' && (
                         <div className="flex items-center gap-1">
                           <Flag size={12} className={`md:w-3.5 md:h-3.5 ${

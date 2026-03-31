@@ -1,9 +1,13 @@
+
+
+import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { Topbar } from "../components/Topbar";
 import { TaskDetails } from "../components/TaskDetails";
 import { NewTaskModal } from "../modals/NewTaskModal";
 import { SettingsModal } from "../modals/SettingsModal";
 import { DeleteAllDataConfirmModal } from "../modals/DeleteAllDataConfirmModal";
+import { BackupModal } from "../modals/BackupModal";           
 import { useDashboardState } from "../hooks/useDashboardState";
 import { renderDashboardView } from "../utils/dashboardView";
 
@@ -32,7 +36,11 @@ export default function Dashboard() {
     executeDataWipe,
   } = useDashboardState();
 
-  return (
+const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const openBackup = () => setIsBackupOpen(true);
+  const closeBackup = () => setIsBackupOpen(false);
+
+return (
     <div className="drawer lg:drawer-open h-screen w-screen overflow-hidden bg-base-100 text-base-content font-sans">
       <input id="sidebar-drawer" type="checkbox" className="drawer-toggle" />
 
@@ -52,17 +60,16 @@ export default function Dashboard() {
             })}
           </div>
         </main>
-        
+
         {isRightSidebarOpen && (
           <>
-            <div 
+            <div
               className="fixed inset-0 bg-black/40 z-60 lg:hidden backdrop-blur-sm transition-opacity"
               onClick={toggleRightSidebar}
               aria-hidden="true"
             />
 
             <aside className="fixed inset-x-0 bottom-0 z-70 h-[85vh] bg-base-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-3xl overflow-hidden border-t border-base-content/10 flex flex-col lg:static lg:h-full lg:w-80 xl:w-96 lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.02)] lg:shrink-0 lg:z-10 transition-transform duration-300">
-              
               {selectedTask ? (
                 <TaskDetails
                   task={selectedTask}
@@ -97,12 +104,12 @@ export default function Dashboard() {
           onClose={closeNewTaskModal}
         />
       )}
-
       <SettingsModal
         isOpen={isSettingsOpen}
         theme={theme}
         onThemeChange={setTheme}
         onDeleteAllData={promptDeleteAllData}
+        onOpenBackup={openBackup}
         onClose={closeSettings}
       />
 
@@ -110,6 +117,10 @@ export default function Dashboard() {
         isOpen={isDeleteAllConfirmOpen}
         onCancel={cancelDeleteAllData}
         onConfirm={executeDataWipe}
+      />
+      <BackupModal
+        isOpen={isBackupOpen}
+        onClose={closeBackup}
       />
     </div>
   );

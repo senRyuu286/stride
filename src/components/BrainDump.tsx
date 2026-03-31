@@ -3,8 +3,8 @@ import {
   Plus,
   Trash2,
   FolderOutput,
-  CheckSquare,
   AlertOctagon,
+  ListChecks,
 } from "lucide-react";
 import { useBrainDump } from "../hooks/useBrainDump";
 import type { BrainDumpProps } from "../types/components";
@@ -13,7 +13,6 @@ export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
   const {
     inputValue,
     setInputValue,
-    selectedIds,
     editingId,
     setEditingId,
     editValue,
@@ -22,10 +21,8 @@ export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
     handleQuickAdd,
     handleDelete,
     handleSaveEdit,
-    toggleSelection,
-    handleDeleteSelected,
-    handleMergeSelected,
     handleClearAll,
+    handleComplete, 
   } = useBrainDump();
 
   return (
@@ -44,23 +41,7 @@ export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {selectedIds.size > 1 && (
-            <button
-              onClick={handleMergeSelected}
-              className="btn btn-sm btn-secondary"
-            >
-              <CheckSquare size={16} /> Merge ({selectedIds.size})
-            </button>
-          )}
-          {selectedIds.size > 0 && (
-            <button
-              onClick={handleDeleteSelected}
-              className="btn btn-sm btn-error btn-outline"
-            >
-              <Trash2 size={16} /> Delete
-            </button>
-          )}
-          {selectedIds.size === 0 && brainDumpTasks.length > 0 && (
+          {brainDumpTasks.length > 0 && (
             <button
               onClick={handleClearAll}
               className="btn btn-sm btn-ghost text-error hover:bg-error/10"
@@ -80,6 +61,10 @@ export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           autoFocus
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
         />
         <button
           type="submit"
@@ -105,18 +90,14 @@ export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
             {brainDumpTasks.map((task) => (
               <li
                 key={task.id}
-                className={`group flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3 p-3 bg-base-100 border rounded-xl transition-all shadow-sm ${
-                  selectedIds.has(task.id)
-                    ? "border-primary bg-primary/5"
-                    : "border-base-content/10 hover:border-base-content/30"
-                }`}
+                className="group flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3 p-3 bg-base-100 border border-base-content/10 hover:border-base-content/30 rounded-xl transition-all shadow-sm"
               >
                 <div className="flex items-center flex-1 min-w-0 gap-3 w-full md:w-auto">
                   <input
                     type="checkbox"
+                    aria-label="Mark as complete"
                     className="checkbox checkbox-sm checkbox-primary rounded-md shrink-0"
-                    checked={selectedIds.has(task.id)}
-                    onChange={() => toggleSelection(task.id)}
+                    onChange={() => handleComplete(task.id)} 
                   />
 
                   <div
@@ -141,12 +122,23 @@ export default function BrainDump({ onTaskSelect }: BrainDumpProps) {
                         />
                       </div>
                     ) : (
-                      <h4
-                        className="font-medium text-sm md:text-base text-base-content truncate cursor-text select-none"
-                        title="Double-click to edit"
-                      >
-                        {task.title}
-                      </h4>
+                      <div className="flex items-center flex-wrap gap-2">
+                        <h4
+                          className="font-medium text-sm md:text-base text-base-content truncate cursor-text select-none"
+                          title="Double-click to edit"
+                        >
+                          {task.title}
+                        </h4>
+                        {task.subtasks && task.subtasks.length > 0 && (
+                          <span 
+                            className="badge badge-ghost badge-sm gap-1 text-[10px] font-medium opacity-70 shrink-0" 
+                            title={`${task.subtasks.length} subtasks`}
+                          >
+                            <ListChecks size={12} />
+                            {task.subtasks.length}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

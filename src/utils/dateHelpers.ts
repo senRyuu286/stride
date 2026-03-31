@@ -1,7 +1,6 @@
 export function formatForDateTimeLocal(isoString?: string | null): string {
   if (!isoString) return "";
   
-  // Safety check: ensure it's a valid string before slicing
   try {
     return isoString.slice(0, 16);
   } catch {
@@ -17,12 +16,18 @@ export function getWholeDaysLeft(dueDateStr: string | null): number | null {
 
   if (isNaN(due.getTime())) return null;
 
-  // Strip time for "whole day" calculation
   due.setHours(0, 0, 0, 0);
   now.setHours(0, 0, 0, 0);
 
   const diffTime = due.getTime() - now.getTime();
   return Math.round(diffTime / (1000 * 60 * 60 * 24));
+}
+
+export function isWithinNextSevenDays(dueDateStr: string | null): boolean {
+  const daysLeft = getWholeDaysLeft(dueDateStr);
+  if (daysLeft === null) return false;
+  
+  return daysLeft > 0 && daysLeft <= 7;
 }
 
 export function formatFullDate(dueDateStr: string | null): string {

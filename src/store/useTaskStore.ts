@@ -22,7 +22,7 @@ export interface Task {
   title: string;
   category: string;
   dueDate: string | null;
-  completionDate: string | null;
+  completionDate?: string | null;
   description: string;
   subtasks: Subtask[];
   status: TaskStatus;
@@ -140,14 +140,24 @@ export const useTaskStore = create<TaskState>()(
       },
 
       updateTask: (taskId, updates) =>
-        set((state) => ({
-          upcomingTasks: state.upcomingTasks.map((t) =>
-            t.id === taskId ? { ...t, ...updates } : t,
-          ),
-          dailyTasks: state.dailyTasks.map((t) =>
-            t?.id === taskId ? { ...t, ...updates } : t,
-          ),
-        })),
+        set((state) => {
+          const finalUpdates = { ...updates };
+          
+          if (updates.status === "completed") {
+            finalUpdates.completionDate = new Date().toISOString();
+          } else if (updates.status === "todo" || updates.status === "in-progress") {
+             finalUpdates.completionDate = null;
+          }
+
+          return {
+            upcomingTasks: state.upcomingTasks.map((t) =>
+              t.id === taskId ? { ...t, ...finalUpdates } : t,
+            ),
+            dailyTasks: state.dailyTasks.map((t) =>
+              t?.id === taskId ? { ...t, ...finalUpdates } : t,
+            ),
+          };
+        }),
 
       deleteTask: (taskId) =>
         set((state) => ({

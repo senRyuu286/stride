@@ -1,7 +1,13 @@
-import { type PriorityLevel } from "../store/useTaskStore";
+import React, { useMemo, useState } from "react";
+import { type PriorityLevel, useTaskStore } from "../store/useTaskStore";
 import { useNewTaskModalForm } from "../hooks/useNewTaskModalForm";
 import type { NewTaskModalProps } from "../types/modals";
 import { BRAIN_DUMP_CATEGORY } from "../utils/taskHelpers";
+
+const formatToLocalDatetime = (d: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
   const {
@@ -27,6 +33,77 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
     handleRemovePendingSubtask,
     saveTask,
   } = useNewTaskModalForm(taskToEdit);
+
+const upcomingTasks = useTaskStore((state) => state.upcomingTasks);
+  const dailyTasks = useTaskStore((state) => state.dailyTasks);
+
+  const allTasks = useMemo(() => {
+    return [
+      ...(upcomingTasks || []),
+      ...(dailyTasks || []).filter((t): t is NonNullable<typeof t> => t !== null),
+    ];
+  }, [upcomingTasks, dailyTasks]);
+  
+  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [newTagInput, setNewTagInput] = useState("");
+
+  const availableTags = useMemo(() => {
+    const predefined = ["Work", "Personal", "Urgent", "Study", "Health", "Finance", "Errands", "Project"];
+    const existing = allTasks.flatMap((t) => t?.tags || []);
+    return Array.from(new Set([...predefined, ...existing, ...customTags])).filter(Boolean);
+  }, [allTasks, customTags]);
+
+const selectedTagsList = useMemo(() => {
+    if (!tagsInput || typeof tagsInput !== "string") return [];
+    return tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+  }, [tagsInput]);
+
+  const toggleTag = (tag: string) => {
+    if (selectedTagsList.includes(tag)) {
+      setTagsInput(selectedTagsList.filter((t) => t !== tag).join(", "));
+    } else {
+      setTagsInput([...selectedTagsList, tag].join(", "));
+    }
+  };
+
+  const addCustomTag = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    const t = newTagInput.trim();
+    if (!t) return;
+    if (!customTags.includes(t)) {
+      setCustomTags((prev) => [...prev, t]);
+    }
+    if (!selectedTagsList.includes(t)) {
+      setTagsInput([...selectedTagsList, t].join(", "));
+    }
+    setNewTagInput("");
+  };
+
+const quickDates = useMemo(() => {
+    const now = new Date();
+
+    const today = new Date(now);
+    today.setHours(23, 59, 0, 0);
+
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setHours(23, 59, 0, 0);
+
+    const thisWeek = new Date(now);
+    thisWeek.setDate(now.getDate() + (7 - now.getDay()));
+    thisWeek.setHours(23, 59, 0, 0);
+
+    const nextWeek = new Date(thisWeek);
+    nextWeek.setDate(thisWeek.getDate() + 7);
+    nextWeek.setHours(23, 59, 0, 0);
+
+    return [
+      { label: "Today", value: formatToLocalDatetime(today) },
+      { label: "Tomorrow", value: formatToLocalDatetime(tomorrow) },
+      { label: "This Week", value: formatToLocalDatetime(thisWeek) },
+      { label: "Next Week", value: formatToLocalDatetime(nextWeek) },
+    ];
+  }, []);
 
   return (
     <div className="modal modal-open modal-bottom sm:modal-middle bg-neutral-900/40 backdrop-blur-sm z-50 sm:p-4">
@@ -56,7 +133,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               autoFocus
               type="text"
               className="input input-bordered w-full bg-base-200/50"
-              value={title}
+              value={title || ""}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="What needs to be done?"
             />
@@ -70,7 +147,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               {!isAddingNewCategory ? (
                 <select
                   className="select select-bordered w-full bg-base-200/50"
-                  value={category}
+                  value={category || ""}
                   onChange={(event) => {
                     if (event.target.value === "+++NEW+++") {
                       setIsAddingNewCategory(true);
@@ -80,7 +157,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                     }
                   }}
                 >
-                  {existingCategories.map((existingCategory) => (
+                  {(existingCategories || []).map((existingCategory) => (
                     <option
                       key={existingCategory}
                       value={existingCategory}
@@ -102,7 +179,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                     autoFocus
                     type="text"
                     className="input input-bordered w-full bg-base-200/50"
-                    value={category}
+                    value={category || ""}
                     onChange={(event) => setCategory(event.target.value)}
                     placeholder="New project name..."
                   />
@@ -110,7 +187,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                     className="btn btn-ghost px-2 shrink-0"
                     onClick={() => {
                       setIsAddingNewCategory(false);
-                      setCategory(existingCategories[0] || BRAIN_DUMP_CATEGORY);
+                      setCategory(existingCategories?.[0] || BRAIN_DUMP_CATEGORY);
                     }}
                   >
                     X
@@ -125,7 +202,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               </label>
               <select
                 className="select select-bordered w-full bg-base-200/50"
-                value={priority}
+                value={priority || "None"}
                 onChange={(event) => setPriority(event.target.value as PriorityLevel)}
               >
                 <option value="None" className="bg-base-100">None</option>
@@ -141,25 +218,75 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
               <label className="label">
                 <span className="label-text font-medium">Due Date & Time</span>
               </label>
-              <input
-                type="datetime-local"
-                className="input input-bordered w-full bg-base-200/50 text-base-content"
-                value={dueDate}
-                onChange={(event) => setDueDate(event.target.value)}
-              />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap gap-2">
+                  {quickDates.map((qd) => (
+                    <button
+                      key={qd.label}
+                      type="button"
+                      onClick={() => setDueDate(qd.value)}
+                      className={`badge badge-lg cursor-pointer transition-colors ${
+                        dueDate === qd.value
+                          ? "badge-primary"
+                          : "badge-outline border-base-content/20 bg-base-200/50 hover:bg-base-300"
+                      }`}
+                    >
+                      {qd.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="datetime-local"
+                  className="input input-bordered w-full bg-base-200/50 text-base-content"
+                  value={dueDate || ""}
+                  onChange={(event) => setDueDate(event.target.value)}
+                />
+              </div>
             </div>
             
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Tags</span>
               </label>
-              <input
-                type="text"
-                className="input input-bordered w-full bg-base-200/50"
-                value={tagsInput}
-                onChange={(event) => setTagsInput(event.target.value)}
-                placeholder="Exam, Reading, Urgent"
-              />
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="input input-bordered w-full bg-base-200/50"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addCustomTag(e)}
+                    placeholder="Type and press add..."
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary shrink-0"
+                    onClick={addCustomTag}
+                  >
+                    Add
+                  </button>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 max-h-27.5 overflow-y-auto pb-1 scrollbar-thin">
+                  {availableTags.map((tag) => {
+                    const isSelected = selectedTagsList.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className={`badge badge-lg cursor-pointer transition-colors ${
+                          isSelected
+                            ? "badge-primary"
+                            : "badge-outline border-base-content/20 bg-base-200/50 hover:bg-base-300"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
           
@@ -172,7 +299,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                 type="text"
                 className="input input-bordered flex-1 bg-base-200/50"
                 placeholder="Add a step..."
-                value={subtaskInput}
+                value={subtaskInput || ""}
                 onChange={(event) => setSubtaskInput(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && handleAddPendingSubtask()}
               />
@@ -180,7 +307,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
                 Add
               </button>
             </div>
-            {pendingSubtasks.length > 0 && (
+            {(pendingSubtasks || []).length > 0 && (
               <ul className="space-y-2 mt-1">
                 {pendingSubtasks.map((subtask, index) => (
                   <li
@@ -206,7 +333,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
             </label>
             <textarea
               className="textarea textarea-bordered w-full bg-base-200/50 h-24 sm:h-32"
-              value={description}
+              value={description || ""}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Add notes here..."
             />
@@ -223,7 +350,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
             <button 
               className="btn btn-primary w-full sm:w-auto order-1 sm:order-2 rounded-xl" 
               onClick={() => saveTask(onClose)} 
-              disabled={!title.trim()}
+              disabled={!title?.trim()}
             >
               {taskToEdit ? "Save Task" : "Create Task"}
             </button>

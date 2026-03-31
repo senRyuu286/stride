@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-
 @plugin "daisyui/theme" {
   name: "stride-dark";
   default: true;

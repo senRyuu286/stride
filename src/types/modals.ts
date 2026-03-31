@@ -1,3 +1,5 @@
+
+
 import type { Task } from "../store/useTaskStore";
 
 export interface NewTaskModalProps {
@@ -24,4 +26,9 @@ export interface DeleteTaskModalProps {
   taskTitle?: string;
   onCancel: () => void;
   onConfirm: () => void;
+}
+
+export interface BackupModalProps {
+  isOpen: boolean;
+  onClose: () => void;
 }

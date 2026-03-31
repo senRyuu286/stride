@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { type Subtask } from "../store/useTaskStore";
 import { useTasks } from "./useTasks";
-import { BRAIN_DUMP_CATEGORY, createId, mergeTaskLists } from "../utils/taskHelpers";
+import { BRAIN_DUMP_CATEGORY, mergeTaskLists } from "../utils/taskHelpers";
 
 export function useBrainDump() {
   const {
@@ -14,7 +13,6 @@ export function useBrainDump() {
   } = useTasks();
 
   const [inputValue, setInputValue] = useState("");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
@@ -54,58 +52,16 @@ export function useBrainDump() {
     deleteTask(id);
   };
 
+  const handleComplete = (id: string) => {
+    updateTask(id, { status: "completed" });
+  };
+
   const handleSaveEdit = (id: string) => {
     if (editValue.trim()) {
       updateTask(id, { title: editValue.trim() });
     }
 
     setEditingId(null);
-  };
-
-  const toggleSelection = (id: string) => {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const handleDeleteSelected = () => {
-    selectedIds.forEach((id) => deleteTask(id));
-    setSelectedIds(new Set());
-  };
-
-  const handleMergeSelected = () => {
-    const mergedTitle = window.prompt("Enter a name for the new combined task:");
-    if (!mergedTitle?.trim()) {
-      return;
-    }
-
-    const tasksToMerge = brainDumpTasks.filter((task) => selectedIds.has(task.id));
-    const newSubtasks: Subtask[] = tasksToMerge.map((task) => ({
-      id: createId(),
-      title: task.title,
-      isCompleted: false,
-    }));
-
-    addTask({
-      title: mergedTitle.trim(),
-      category: BRAIN_DUMP_CATEGORY,
-      workspaceId: activeWorkspaceId,
-      description: "Merged from multiple Brain Dump thoughts.",
-      dueDate: null,
-      priority: "None",
-      tags: [],
-      subtasks: newSubtasks,
-      status: "todo",
-    });
-
-    tasksToMerge.forEach((task) => deleteTask(task.id));
-    setSelectedIds(new Set());
   };
 
   const handleClearAll = () => {
@@ -118,13 +74,11 @@ export function useBrainDump() {
     }
 
     brainDumpTasks.forEach((task) => deleteTask(task.id));
-    setSelectedIds(new Set());
   };
 
   return {
     inputValue,
     setInputValue,
-    selectedIds,
     editingId,
     setEditingId,
     editValue,
@@ -132,10 +86,8 @@ export function useBrainDump() {
     brainDumpTasks,
     handleQuickAdd,
     handleDelete,
+    handleComplete,
     handleSaveEdit,
-    toggleSelection,
-    handleDeleteSelected,
-    handleMergeSelected,
     handleClearAll,
   };
 }

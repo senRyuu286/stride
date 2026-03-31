@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { type Task } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
-import { Zap, Plus, Filter } from "lucide-react";
+import { Zap, Plus, Filter, ListChecks } from "lucide-react";
 import { BRAIN_DUMP_CATEGORY } from "../utils/taskHelpers";
 
 export interface FocusProps {
@@ -250,8 +250,14 @@ export default function Focus({ onTaskSelect }: FocusProps) {
                     <h4 className="font-bold text-base md:text-lg leading-tight pr-6 wrap-break-word">
                       {task.title}
                     </h4>
-                    <p className="text-xs md:text-sm text-base-content/60 mt-1 truncate">
-                      {task.category}
+                    <p className="text-xs md:text-sm text-base-content/60 mt-1 flex items-center gap-2 truncate">
+                      <span className="truncate">{task.category}</span>
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <span className="flex items-center gap-1 shrink-0 bg-base-content/5 px-1.5 py-0.5 rounded-md" title={`${task.subtasks.length} subtasks`}>
+                          <ListChecks size={12} />
+                          {task.subtasks.length}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -387,6 +393,15 @@ export default function Focus({ onTaskSelect }: FocusProps) {
                           }`}
                         />
                         <span className="truncate">{task.category}</span>
+                        {task.subtasks && task.subtasks.length > 0 && (
+                          <>
+                            <span className="opacity-50 shrink-0 mx-0.5">•</span>
+                            <span className="flex items-center gap-1 shrink-0 bg-base-content/5 px-1.5 py-0.5 rounded-md" title={`${task.subtasks.length} subtasks`}>
+                              <ListChecks size={10} />
+                              {task.subtasks.length}
+                            </span>
+                          </>
+                        )}
                       </span>
                     </div>
                   </div>

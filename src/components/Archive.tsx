@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Archive as ArchiveIcon, CheckCircle2, RotateCcw, Calendar } from "lucide-react";
+import { Archive as ArchiveIcon, CheckCircle2, RotateCcw, Calendar, ListChecks } from "lucide-react";
 import { type Task } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
 import { mergeTaskLists } from "../utils/taskHelpers";
@@ -17,9 +17,15 @@ export default function Archive({ onTaskSelect }: ArchiveProps) {
   } = useTasks();
 
   const archivedTasks = useMemo(() => {
-    return mergeTaskLists(upcomingTasks, dailyTasks).filter(
-      (t) => t.workspaceId === activeWorkspaceId && t.status === 'completed'
-    );
+    return mergeTaskLists(upcomingTasks, dailyTasks)
+      
+      .filter((t) => t && t.workspaceId === activeWorkspaceId && t.status === 'completed')
+      
+      .sort((a, b) => {
+        const dateA = a.completionDate ? new Date(a.completionDate).getTime() : 0;
+        const dateB = b.completionDate ? new Date(b.completionDate).getTime() : 0;
+        return dateB - dateA;
+      });
   }, [upcomingTasks, dailyTasks, activeWorkspaceId]);
 
   const formatDate = (isoString: string | null) => {
@@ -31,13 +37,25 @@ export default function Archive({ onTaskSelect }: ArchiveProps) {
     });
   };
 
+  const formatCompletionDate = (isoString?: string | null) => {
+    if (!isoString) return null;
+    return `Completed ${new Date(isoString).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })} at ${new Date(isoString).toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit'
+    })}`;
+  };
+
   return (
-    <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 md:px-8 py-8 md:py-10">
+    <div className="max-w-4xl mx-auto w-full px-4 py-6 md:px-8 md:py-10">
       
-      <div className="mb-8 md:mb-10">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-12 h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5">
-            <ArchiveIcon size={26} />
+      <div className="mb-6 md:mb-8">
+        <div className="flex items-center gap-3 md:gap-4 mb-2">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-base-200 flex items-center justify-center text-primary shadow-sm border border-base-content/5">
+            <ArchiveIcon size={22} className="md:w-6.5 md:h-6.5" />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold">Archive</h1>
         </div>
@@ -45,6 +63,7 @@ export default function Archive({ onTaskSelect }: ArchiveProps) {
           A history of your completed tasks and past accomplishments.
         </p>
       </div>
+
       <div className="pb-12">
         {archivedTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 opacity-40 text-center border-2 border-dashed border-base-content/10 rounded-2xl">
@@ -69,9 +88,32 @@ export default function Archive({ onTaskSelect }: ArchiveProps) {
                     <h4 className="font-medium truncate text-base-content/70 line-through">
                       {task.title}
                     </h4>
-                    {task.category && (
-                      <p className="text-xs opacity-50 truncate mt-0.5">{task.category}</p>
-                    )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {task.category && (
+                        <span className="text-xs opacity-50 truncate">{task.category}</span>
+                      )}
+                      
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <>
+                          {task.category && <span className="text-[10px] opacity-30">•</span>}
+                          <span className="flex items-center gap-1 shrink-0 bg-base-content/5 px-1.5 py-0.5 rounded-md text-xs opacity-70" title={`${task.subtasks.length} subtasks`}>
+                            <ListChecks size={12} />
+                            {task.subtasks.length}
+                          </span>
+                        </>
+                      )}
+
+                      {task.completionDate && (
+                         <>
+                           {(task.category || (task.subtasks && task.subtasks.length > 0)) && (
+                             <span className="text-[10px] opacity-30">•</span>
+                           )}
+                           <span className="text-xs opacity-50 truncate">
+                             {formatCompletionDate(task.completionDate)}
+                           </span>
+                         </>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3 md:gap-4 shrink-0">

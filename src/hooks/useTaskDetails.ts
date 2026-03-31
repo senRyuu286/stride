@@ -3,6 +3,18 @@ import { type Task } from "../store/useTaskStore";
 import { useTasks } from "./useTasks";
 import { formatFullDate, getWholeDaysLeft } from "../utils/dateHelpers";
 
+const formatCompletionDate = (isoString?: string | null) => {
+  if (!isoString) return null;
+  return `Completed ${new Date(isoString).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })} at ${new Date(isoString).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit'
+  })}`;
+};
+
 export function useTaskDetails(task: Task, onClose: () => void) {
   const { upcomingTasks, dailyTasks, updateTask, toggleTaskCompletion, deleteTask } = useTasks();
 
@@ -68,5 +80,6 @@ export function useTaskDetails(task: Task, onClose: () => void) {
     completeTask,
     toggleSubtask,
     deleteCurrentTask,
+    formatCompletionDate,
   };
 }

@@ -1,5 +1,5 @@
 import { useMemo, type ComponentType } from "react";
-import { CalendarDays, Clock, AlertCircle, Calendar as CalendarIcon, Flag, Circle, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Clock, AlertCircle, Calendar as CalendarIcon, Flag, Circle, CheckCircle2, ListChecks } from "lucide-react";
 import { type Task } from "../store/useTaskStore";
 import { useTasks } from "../hooks/useTasks";
 import { mergeTaskLists } from "../utils/taskHelpers";
@@ -80,9 +80,20 @@ function TimelineSection({
               <h4 className={`font-medium text-sm md:text-base truncate ${task.status === 'completed' ? 'line-through text-base-content/50' : 'text-base-content'}`}>
                 {task.title}
               </h4>
-              {task.category && (
-                <p className="text-[10px] md:text-xs opacity-60 truncate mt-0.5">{task.category}</p>
-              )}
+              <div className="flex items-center mt-0.5">
+                {task.category && (
+                  <span className="text-[10px] md:text-xs opacity-60 truncate">{task.category}</span>
+                )}
+                {task.subtasks && task.subtasks.length > 0 && (
+                  <>
+                    {task.category && <span className="opacity-50 shrink-0 mx-1 text-[10px] md:text-xs">•</span>}
+                    <span className="flex items-center gap-1 shrink-0 bg-base-content/5 px-1.5 py-0.5 rounded-md text-[10px] md:text-xs text-base-content/70" title={`${task.subtasks.length} subtasks`}>
+                      <ListChecks size={10} className="md:w-3 md:h-3" />
+                      {task.subtasks.length}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex flex-col items-end sm:flex-row sm:items-center gap-1 sm:gap-3 shrink-0 text-[10px] md:text-xs font-medium">
               {task.priority !== 'None' && (

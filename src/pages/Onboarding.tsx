@@ -89,7 +89,7 @@ export default function Onboarding({ onFinish }: OnboardingProps) {
             background-image: radial-gradient(circle at center, currentColor 1px, transparent 1px);
             background-size: 24px 24px;
           }
-          /* Added translate3d to offload transform animations entirely to the GPU */
+          
           @keyframes float-1 {
             0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
             50% { transform: translate3d(0, -20px, 0) rotate(10deg); }
@@ -296,9 +296,7 @@ export default function Onboarding({ onFinish }: OnboardingProps) {
             </div>
           </section>
 
-          
-          
-          <section className="px-6 md:px-12 max-w-5xl mx-auto">
+<section className="px-6 md:px-12 max-w-5xl mx-auto">
             <FadeSection className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
                 See the horizon.

@@ -16,6 +16,7 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
     completeTask,
     toggleSubtask,
     deleteCurrentTask,
+    formatCompletionDate,
   } = useTaskDetails(task, onClose);
 
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
@@ -103,6 +104,17 @@ export function TaskDetails({ task, onClose, onEditTask }: TaskDetailsProps) {
                 )}
               </div>
             </div>
+
+            {activeTask.completionDate && (
+              <div className="flex items-start gap-3">
+                <Calendar size={18} className="text-base-content/50 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-base-content/80">
+                    {formatCompletionDate(activeTask.completionDate)}
+                  </p>
+                </div>
+              </div>
+            )}
             
             {activeTask.tags && activeTask.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
