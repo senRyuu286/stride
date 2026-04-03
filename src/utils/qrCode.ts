@@ -1,5 +1,3 @@
-
-
 import pako from "pako";
 import QRCode from "qrcode";
 import jsQR from "jsqr";

@@ -34,13 +34,13 @@ export function BackupModal({ isOpen, onClose }: BackupModalProps) {
   const [pendingPayload, setPendingPayload] =
     useState<StrideBackupPayload | null>(null);
 
-useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
         setActiveTab("export");
         setStatus({ type: null, message: "" });
         setPendingPayload(null);
-      }, 300); 
+      }, 300);
     }
   }, [isOpen]);
 
@@ -255,17 +255,14 @@ function ImportTab({
   onClose: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const {
-    setUpcomingTasks,
-    setDailyTasks,
-    setActiveWorkspaceId,
-  } = useTaskStore();
+  const { setUpcomingTasks, setDailyTasks, setActiveWorkspaceId } =
+    useTaskStore();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-e.target.value = "";
+    e.target.value = "";
     setStatus({ type: null, message: "" });
     setPendingPayload(null);
 
@@ -278,7 +275,7 @@ e.target.value = "";
         return;
       }
 
-setPendingPayload(result.payload);
+      setPendingPayload(result.payload);
     } catch {
       setStatus({
         type: "error",
@@ -291,12 +288,10 @@ setPendingPayload(result.payload);
     if (!pendingPayload) return;
 
     try {
-
-setUpcomingTasks(pendingPayload.upcomingTasks);
+      setUpcomingTasks(pendingPayload.upcomingTasks);
       setDailyTasks(pendingPayload.dailyTasks);
       setActiveWorkspaceId(pendingPayload.activeWorkspaceId);
-
-useTaskStore.setState({ workspaces: pendingPayload.workspaces });
+      useTaskStore.setState({ workspaces: pendingPayload.workspaces });
 
       setPendingPayload(null);
       setStatus({
@@ -416,9 +411,7 @@ function QRGenerateTab({
       setStatus({
         type: "error",
         message:
-          err instanceof Error
-            ? err.message
-            : "Failed to generate QR code.",
+          err instanceof Error ? err.message : "Failed to generate QR code.",
       });
     } finally {
       setIsGenerating(false);
@@ -499,25 +492,57 @@ function QRScanTab({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
+  const scanLoopRef = useRef<() => void>(() => {});
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
 
-  const {
-    setUpcomingTasks,
-    setDailyTasks,
-    setActiveWorkspaceId,
-  } = useTaskStore();
+  const { setUpcomingTasks, setDailyTasks, setActiveWorkspaceId } =
+    useTaskStore();
 
-const stopCamera = useCallback(() => {
+  const stopCamera = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setIsCameraActive(false);
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
     return () => stopCamera();
   }, [stopCamera]);
+
+  useEffect(() => {
+    scanLoopRef.current = () => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
+        rafRef.current = requestAnimationFrame(scanLoopRef.current);
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = decodeQRFromImageData(imageData);
+
+      if (result) {
+        stopCamera();
+        if (!result.ok) {
+          setStatus({ type: "error", message: result.error });
+          return;
+        }
+        setPendingPayload(result.payload);
+        return;
+      }
+
+      rafRef.current = requestAnimationFrame(scanLoopRef.current);
+    };
+  }, [stopCamera, setStatus, setPendingPayload]);
 
   const startCamera = async () => {
     setStatus({ type: null, message: "" });
@@ -529,56 +554,30 @@ useEffect(() => {
       });
 
       streamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
       setIsCameraActive(true);
       setIsCameraLoading(false);
-      scanLoop();
+
+      requestAnimationFrame(() => {
+        if (!videoRef.current) return;
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().then(() => {
+          rafRef.current = requestAnimationFrame(scanLoopRef.current);
+        }).catch(() => {
+          setStatus({
+            type: "error",
+            message: "Failed to start video playback. Please try again.",
+          });
+        });
+      });
     } catch {
       setIsCameraLoading(false);
+      setIsCameraActive(false);
       setStatus({
         type: "error",
         message:
           "Camera access was denied. Please allow camera permissions in your browser settings.",
       });
     }
-  };
-
-  const scanLoop = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      rafRef.current = requestAnimationFrame(scanLoop);
-      return;
-    }
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const result = decodeQRFromImageData(imageData);
-
-    if (result) {
-      stopCamera();
-
-      if (!result.ok) {
-        setStatus({ type: "error", message: result.error });
-        return;
-      }
-
-setPendingPayload(result.payload);
-      return;
-    }
-
-    rafRef.current = requestAnimationFrame(scanLoop);
   };
 
   const handleConfirmImport = () => {

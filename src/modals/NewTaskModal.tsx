@@ -40,7 +40,7 @@ export function NewTaskModal({ onClose, taskToEdit }: NewTaskModalProps) {
   } = useNewTaskMeta(tagsInput, setTagsInput);
 
   return (
-    <div className="modal modal-open modal-bottom sm:modal-middle bg-neutral-900/40 backdrop-blur-sm z-50 sm:p-4">
+    <div className="modal modal-open modal-bottom sm:modal-middle bg-neutral-900/40 backdrop-blur-sm z-100 sm:p-4">
       <div 
         className="fixed inset-0" 
         onClick={onClose}

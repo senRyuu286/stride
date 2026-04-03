@@ -12,4 +12,15 @@ export default defineConfig({
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version),
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        }
+      }
+    }
+  }
 });
